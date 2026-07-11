@@ -131,11 +131,12 @@ export default function ReturnsPage() {
                       <TableCell className="text-sm text-amber-600 font-medium">{formatDate(item.claim_deadline || "")}</TableCell>
                       <TableCell>
                         <Badge 
-                          variant={
-                            item.condition === 'PENDING_INSPECTION' ? 'outline' : 
-                            item.condition === 'SELLABLE' ? 'default' : 'destructive'
+                          variant="outline"
+                          className={
+                            item.condition === 'PENDING_INSPECTION' ? 'text-amber-500 border-amber-500' : 
+                            item.condition === 'SELLABLE' ? 'text-emerald-500 border-emerald-500' : 
+                            'text-red-500 border-red-500'
                           }
-                          className={item.condition === 'SELLABLE' ? 'bg-emerald-500 hover:bg-emerald-600' : ''}
                         >
                           {item.condition === 'PENDING_INSPECTION' ? 'Menunggu Inspeksi' : item.condition}
                         </Badge>

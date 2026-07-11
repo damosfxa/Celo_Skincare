@@ -99,9 +99,9 @@ export default function OpnameSessionsPage() {
                       <TableCell className="font-mono text-xs">{session.id}</TableCell>
                       <TableCell>
                         {session.status === "OPEN" ? (
-                          <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600">Aktif</Badge>
+                          <Badge variant="outline" className="text-emerald-500 border-emerald-500">Aktif</Badge>
                         ) : (
-                          <Badge variant="secondary">Selesai</Badge>
+                          <Badge variant="outline" className="text-muted-foreground">Selesai</Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-sm">{formatDate(session.created_at)}</TableCell>

@@ -20,15 +20,15 @@ export default function NotificationsPage() {
 
   const getStatusBadge = (days: number) => {
     if (days < 0) {
-      return <span className="text-red-500 font-medium whitespace-nowrap">Sudah Kedaluwarsa</span>;
+      return <Badge variant="outline" className="text-red-500 border-red-500 whitespace-nowrap">Sudah Kedaluwarsa</Badge>;
     }
     if (days <= 30) {
-      return <span className="text-red-500 font-medium whitespace-nowrap">Kritis ({days} hari)</span>;
+      return <Badge variant="outline" className="text-red-500 border-red-500 whitespace-nowrap">Kritis ({days} hari)</Badge>;
     }
     if (days <= 90) {
-      return <span className="text-amber-500 font-medium whitespace-nowrap">Peringatan ({days} hari)</span>;
+      return <Badge variant="outline" className="text-amber-500 border-amber-500 whitespace-nowrap">Peringatan ({days} hari)</Badge>;
     }
-    return <span className="text-muted-foreground whitespace-nowrap">Aman ({days} hari)</span>;
+    return <Badge variant="outline" className="text-muted-foreground whitespace-nowrap">Aman ({days} hari)</Badge>;
   };
 
   return (

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { createClient } from "@/lib/supabase/client";
 import {
   Sheet,
   SheetContent,
@@ -18,6 +19,12 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Loader2, Box, Eye, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
@@ -47,8 +54,45 @@ export default function ReturnsPage() {
     },
   });
 
+  const supabase = createClient();
+  const [isUploading, setIsUploading] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [viewPhotoUrl, setViewPhotoUrl] = useState<string | null>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0 || !selectedReturn) return;
+    
+    const file = e.target.files[0];
+    setIsUploading(true);
+    
+    try {
+      // Membersihkan nama file dari karakter aneh
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const fileName = `${selectedReturn.id}/${Date.now()}-${cleanFileName}`;
+      
+      const { data, error } = await supabase.storage
+        .from('return-photos')
+        .upload(fileName, file);
+        
+      if (error) throw error;
+      
+      const { data: urlData } = supabase.storage
+        .from('return-photos')
+        .getPublicUrl(data.path);
+        
+      form.setValue("photo_url", urlData.publicUrl);
+      setPhotoPreview(urlData.publicUrl);
+      toast.success("Foto berhasil diunggah");
+    } catch (error: any) {
+      toast.error(`Gagal upload foto: ${error.message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleOpenInspect = (item: ReturnItem) => {
     setSelectedReturn(item);
+    setPhotoPreview(null);
     form.reset({ condition: "SELLABLE", photo_url: "" });
   };
 
@@ -152,9 +196,21 @@ export default function ReturnsPage() {
                             Inspeksi
                           </Button>
                         ) : (
-                          <Button variant="ghost" size="sm" disabled>
-                            Selesai
-                          </Button>
+                          <div className="flex justify-end items-center gap-2">
+                            {item.photo_url && (
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => setViewPhotoUrl(item.photo_url!)}
+                              >
+                                <ImageIcon className="mr-1 h-3 w-3" />
+                                Foto
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm" disabled>
+                              Selesai
+                            </Button>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>
@@ -191,27 +247,46 @@ export default function ReturnsPage() {
               </div>
 
               <div className="space-y-2 pt-2">
-                <Label htmlFor="photo_url" className="flex items-center gap-2">
+                <Label htmlFor="photo" className="flex items-center gap-2">
                   <ImageIcon className="h-4 w-4" />
-                  URL Foto Bukti
+                  Foto Bukti Kondisi
                 </Label>
                 <Input
-                  id="photo_url"
-                  placeholder="https://.../bukti-retur.jpg"
-                  disabled={isSubmitting}
-                  {...form.register("photo_url")}
+                  id="photo"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  disabled={isSubmitting || isUploading}
+                  onChange={handleFileUpload}
                 />
-                <p className="text-xs text-muted-foreground">
-                  Karena Supabase Storage belum disetup, gunakan teks URL sementara (wajib diisi jika barang Rusak/Hilang).
-                </p>
+                
+                <input type="hidden" {...form.register("photo_url")} />
+                
+                {isUploading && (
+                  <div className="flex items-center text-sm text-muted-foreground mt-2">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Mengunggah foto...
+                  </div>
+                )}
+                
+                {photoPreview && !isUploading && (
+                  <div className="mt-3 border rounded-md p-1 bg-muted/10">
+                    <img 
+                      src={photoPreview} 
+                      alt="Preview Foto Retur" 
+                      className="w-full h-auto max-h-48 object-contain rounded" 
+                    />
+                  </div>
+                )}
+                
                 {form.formState.errors.photo_url && (
-                  <p className="text-sm font-medium text-destructive">
+                  <p className="text-sm font-medium text-destructive mt-1">
                     {form.formState.errors.photo_url.message}
                   </p>
                 )}
               </div>
 
-              <Button type="submit" className="w-full mt-4" disabled={isSubmitting}>
+              <Button type="submit" className="w-full mt-4" disabled={isSubmitting || isUploading}>
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -225,6 +300,23 @@ export default function ReturnsPage() {
           </div>
         </SheetContent>
       </Sheet>
+
+      <Dialog open={!!viewPhotoUrl} onOpenChange={(open) => !open && setViewPhotoUrl(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Foto Bukti Kondisi</DialogTitle>
+          </DialogHeader>
+          <div className="flex justify-center mt-2">
+            {viewPhotoUrl && (
+              <img 
+                src={viewPhotoUrl} 
+                alt="Foto Bukti Retur" 
+                className="max-w-full h-auto max-h-[70vh] object-contain rounded-md shadow-sm border" 
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

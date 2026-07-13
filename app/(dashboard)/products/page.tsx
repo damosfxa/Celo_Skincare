@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
+
 import { useProducts } from "@/hooks/useProducts";
 import { CreateProductForm } from "@/components/products/create-product-form";
 import { IntakeBatchForm } from "@/components/products/intake-batch-form";
+import { BundleRecipeModal } from "@/components/products/bundle-recipe-modal";
 import {
   Table,
   TableBody,
@@ -16,6 +19,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function ProductsPage() {
   const { products, isLoading, isError } = useProducts();
+  const [selectedBundleId, setSelectedBundleId] = useState<string | null>(null);
 
   return (
     <div className="space-y-6">
@@ -66,7 +70,15 @@ export default function ProductsPage() {
                 </TableHeader>
                 <TableBody>
                   {products.map((product) => (
-                    <TableRow key={product.id}>
+                    <TableRow 
+                      key={product.id}
+                      className={product.is_bundle ? "cursor-pointer hover:bg-muted/50" : ""}
+                      onClick={() => {
+                        if (product.is_bundle) {
+                          setSelectedBundleId(product.id);
+                        }
+                      }}
+                    >
                       <TableCell className="font-medium">{product.sku}</TableCell>
                       <TableCell>{product.name}</TableCell>
                       <TableCell>
@@ -93,6 +105,12 @@ export default function ProductsPage() {
           )}
         </CardContent>
       </Card>
+
+      <BundleRecipeModal 
+        productId={selectedBundleId}
+        isOpen={!!selectedBundleId}
+        onClose={() => setSelectedBundleId(null)}
+      />
     </div>
   );
 }

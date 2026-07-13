@@ -14,3 +14,12 @@ export const batchIntakeSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal harus YYYY-MM-DD"),
   qty: z.number().int().positive("Qty harus lebih dari 0"),
 });
+
+export const bundleRecipeSchema = z
+  .array(
+    z.object({
+      component_product_id: z.string().uuid(),
+      qty_per_bundle: z.number().int().positive("Qty per bundle harus lebih dari 0"),
+    })
+  )
+  .min(1, "Bundle harus punya minimal 1 komponen");

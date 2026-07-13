@@ -140,8 +140,8 @@ export default function OpnameSessionDetail() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
-            <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-4">
-              <div className="flex-1 space-y-2">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col sm:flex-row sm:items-start gap-4">
+              <div className="w-full sm:flex-1 space-y-2">
                 <Label htmlFor="batch_id">Batch ID</Label>
                 <div className="flex gap-2">
                   <Input
@@ -164,7 +164,7 @@ export default function OpnameSessionDetail() {
                 )}
               </div>
 
-              <div className="w-32 space-y-2">
+              <div className="w-full sm:w-32 space-y-2">
                 <Label htmlFor="physical_qty">Qty Fisik</Label>
                 <Input
                   id="physical_qty"
@@ -184,8 +184,8 @@ export default function OpnameSessionDetail() {
                 )}
               </div>
 
-              <div className="pt-8">
-                <Button type="submit" disabled={isSubmitting || isClosing} className="py-6 px-6">
+              <div className="w-full sm:w-auto pt-2 sm:pt-8">
+                <Button type="submit" disabled={isSubmitting || isClosing} className="w-full py-6 px-6">
                   {isSubmitting ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (

@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, ScanBarcode, Send, Lock } from "lucide-react";
+import { Loader2, ScanBarcode, Send, Lock, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 const formSchema = z.object({
@@ -116,9 +116,20 @@ export default function OpnameSessionDetail() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Sesi Opname</h2>
-          <p className="text-muted-foreground font-mono text-sm mt-1">ID: {sessionId}</p>
+        <div className="flex items-center gap-3">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={() => router.push("/opname")}
+            className="h-10 w-10 shrink-0"
+            title="Kembali ke Daftar Sesi"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Sesi Opname</h2>
+            <p className="text-muted-foreground font-mono text-sm mt-1">ID: {sessionId}</p>
+          </div>
         </div>
         {isSessionOpen && (
           <Button variant="destructive" onClick={handleCloseSession} disabled={isClosing}>

@@ -12,7 +12,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus, PackageOpen, X, RotateCcw, Box } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Loader2, Plus, PackageOpen, X, RotateCcw, Box, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 
@@ -23,6 +24,10 @@ export default function SimulationPage() {
   
   const [channel, setChannel] = useState("shopee");
   const [count, setCount] = useState("1");
+
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{created: number, failed: any[]} | null>(null);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +46,39 @@ export default function SimulationPage() {
       toast.error(error.message);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleImportCsv = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!csvFile) return;
+    setIsImporting(true);
+    setImportResult(null);
+    try {
+      const formData = new FormData();
+      formData.append("file", csvFile);
+      const res = await fetch("/api/orders/import", {
+        method: "POST",
+        body: formData,
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || json.message || "Gagal mengimpor CSV");
+      
+      const payload = json.data;
+      setImportResult({ created: payload.created || 0, failed: payload.failed || [] });
+      if (payload.created > 0) {
+        toast.success(`${payload.created} pesanan berhasil diimpor`);
+      } else {
+        toast.warning("Tidak ada pesanan yang berhasil diimpor");
+      }
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsImporting(false);
+      setCsvFile(null);
+      // Reset input file visual
+      const fileInput = document.getElementById('csv_file') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
     }
   };
 
@@ -122,6 +160,52 @@ export default function SimulationPage() {
               Generate Orders
             </Button>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card className="border-primary/50 shadow-sm bg-muted/10">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg">Impor Pesanan Massal (CSV)</CardTitle>
+          <CardDescription>
+            Format Header CSV: <code className="bg-muted px-1 py-0.5 rounded text-xs">channel,external_order_id,sku,qty,ordered_at</code>
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleImportCsv} className="flex flex-col sm:flex-row items-end gap-4">
+            <div className="space-y-2 w-full sm:flex-1">
+              <Label htmlFor="csv_file">Pilih File CSV</Label>
+              <Input 
+                id="csv_file" 
+                type="file" 
+                accept=".csv" 
+                onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                disabled={isImporting}
+                className="cursor-pointer bg-background"
+              />
+            </div>
+            
+            <Button type="submit" variant="secondary" disabled={isImporting || !csvFile} className="w-full sm:w-auto">
+              {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+              Import CSV
+            </Button>
+          </form>
+
+          {importResult && (
+            <div className={`mt-4 p-4 rounded-md border ${importResult.failed.length > 0 ? "border-amber-200 bg-amber-500/10" : "border-emerald-200 bg-emerald-500/10"}`}>
+              <p className="font-medium text-sm mb-2">Hasil Impor:</p>
+              <p className="text-sm">Berhasil dibuat: <strong>{importResult.created}</strong> pesanan</p>
+              {importResult.failed.length > 0 && (
+                <div className="mt-2 text-sm">
+                  <p className="font-medium text-destructive">Gagal: {importResult.failed.length} pesanan</p>
+                  <ul className="mt-1 max-h-32 overflow-y-auto list-disc pl-5 space-y-1 text-xs text-muted-foreground">
+                    {importResult.failed.map((fail, idx) => (
+                      <li key={idx}>ID: <span className="font-mono text-foreground">{fail.external_order_id}</span> - {fail.message}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 

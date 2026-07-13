@@ -31,6 +31,12 @@ export type RecipeComponent = {
 
 export type ProductDetail = Product & {
   recipe?: RecipeComponent[];
+  batches?: {
+    id: string;
+    batch_code: string;
+    expiry_date?: string;
+    current_qty: number;
+  }[];
 };
 
 export function useProducts() {

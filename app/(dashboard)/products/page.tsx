@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useProducts } from "@/hooks/useProducts";
 import { CreateProductForm } from "@/components/products/create-product-form";
 import { IntakeBatchForm } from "@/components/products/intake-batch-form";
-import { BundleRecipeModal } from "@/components/products/bundle-recipe-modal";
 import {
   Table,
   TableBody,
@@ -16,10 +15,11 @@ import {
 } from "@/components/ui/table";
 import { Loader2, Package, Layers } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
 
 export default function ProductsPage() {
   const { products, isLoading, isError } = useProducts();
-  const [selectedBundleId, setSelectedBundleId] = useState<string | null>(null);
+  const router = useRouter();
 
   return (
     <div className="space-y-6">
@@ -72,12 +72,8 @@ export default function ProductsPage() {
                   {products.map((product) => (
                     <TableRow 
                       key={product.id}
-                      className={product.is_bundle ? "cursor-pointer hover:bg-muted/50" : ""}
-                      onClick={() => {
-                        if (product.is_bundle) {
-                          setSelectedBundleId(product.id);
-                        }
-                      }}
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => router.push(`/products/${product.id}`)}
                     >
                       <TableCell className="font-medium">{product.sku}</TableCell>
                       <TableCell>{product.name}</TableCell>
@@ -105,12 +101,6 @@ export default function ProductsPage() {
           )}
         </CardContent>
       </Card>
-
-      <BundleRecipeModal 
-        productId={selectedBundleId}
-        isOpen={!!selectedBundleId}
-        onClose={() => setSelectedBundleId(null)}
-      />
     </div>
   );
 }

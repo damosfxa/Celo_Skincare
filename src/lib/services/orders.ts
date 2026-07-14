@@ -55,7 +55,17 @@ export async function resolveItemsForProduct(
     .eq("bundle_product_id", productId);
   if (error) throw error;
 
-  return (recipe ?? []).map((r: any) => ({
+  // Bundle tanpa resep gak boleh sampai kebentuk jadi order kosong --
+  // itu bikin order "berhasil" dibuat tapi gak punya item sama sekali,
+  // baru ketahuan gagalnya belakangan (misal pas mau ship atau retur).
+  // Gagalkan dari sini biar penyebabnya jelas dari awal.
+  if (!recipe || recipe.length === 0) {
+    throw new Error(
+      `Produk bundle ini belum punya resep komponen -- atur resepnya dulu sebelum bisa dipakai di order`
+    );
+  }
+
+  return recipe.map((r: any) => ({
     product_id: r.component_product_id,
     qty: r.qty_per_bundle * qty,
   }));

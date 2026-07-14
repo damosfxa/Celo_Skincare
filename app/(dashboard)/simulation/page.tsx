@@ -8,6 +8,7 @@ import {
   simulateCancelOrder, 
   simulateReturnOrder 
 } from "@/hooks/useOrders";
+import { useProducts } from "@/hooks/useProducts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,13 @@ export default function SimulationPage() {
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [importResult, setImportResult] = useState<{created: number, failed: any[]} | null>(null);
+
+  const { products } = useProducts();
+  const [manualOutProduct, setManualOutProduct] = useState("");
+  const [manualOutType, setManualOutType] = useState("OUT_SALE_OFFLINE");
+  const [manualOutQty, setManualOutQty] = useState("");
+  const [manualOutReason, setManualOutReason] = useState("");
+  const [isManualOutLoading, setIsManualOutLoading] = useState(false);
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,6 +113,56 @@ export default function SimulationPage() {
     }
   };
 
+  const handleManualOut = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualOutProduct || !manualOutQty || !manualOutReason) return;
+    
+    setIsManualOutLoading(true);
+    try {
+      const res = await fetch("/api/ledger/manual-out", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          product_id: manualOutProduct,
+          qty: parseInt(manualOutQty, 10),
+          movement_type: manualOutType,
+          reason: manualOutReason,
+        }),
+      });
+      const json = await res.json();
+      
+      if (!json.success) {
+        if (json.error?.code === "INSUFFICIENT_STOCK") {
+          throw new Error("Stok tidak mencukupi untuk jumlah yang diminta.");
+        }
+        throw new Error(json.error?.message || json.message || "Gagal mencatat mutasi manual");
+      }
+      
+      const payload = json.data;
+      // Get the type label for the toast
+      const typeLabels: Record<string, string> = {
+        "OUT_SALE_OFFLINE": "Penjualan Offline",
+        "OUT_BONUS": "Bonus",
+        "OUT_PROMO": "Promo",
+        "OUT_SAMPLE": "Sample",
+        "OUT_DAMAGED": "Barang Rusak",
+        "OUT_EXPIRED": "Barang Kedaluwarsa",
+      };
+      const label = typeLabels[payload.movement_type] || payload.movement_type;
+      
+      toast.success(`${payload.qty} pcs berhasil dicatat sebagai ${label}`);
+      
+      // Reset form
+      setManualOutProduct("");
+      setManualOutQty("");
+      setManualOutReason("");
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsManualOutLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -158,6 +216,90 @@ export default function SimulationPage() {
             <Button type="submit" disabled={isGenerating} className="w-full sm:w-auto">
               {isGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
               Generate Orders
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card className="border-primary/50 shadow-sm bg-muted/10">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg">Mutasi Keluar Manual</CardTitle>
+          <CardDescription>
+            Catat pengeluaran barang di luar pesanan online (misal: barang rusak, sampel, dll).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleManualOut} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="manualOutProduct">Pilih Produk</Label>
+                <select
+                  id="manualOutProduct"
+                  value={manualOutProduct}
+                  onChange={(e) => setManualOutProduct(e.target.value)}
+                  disabled={isManualOutLoading}
+                  required
+                  className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="" disabled>-- Pilih Produk --</option>
+                  {products.filter(p => !p.is_bundle && p.current_qty > 0).map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.sku} - {p.name} (Sisa: {p.current_qty})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="manualOutType">Tipe Mutasi</Label>
+                <select
+                  id="manualOutType"
+                  value={manualOutType}
+                  onChange={(e) => setManualOutType(e.target.value)}
+                  disabled={isManualOutLoading}
+                  className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="OUT_SALE_OFFLINE">Penjualan Offline</option>
+                  <option value="OUT_BONUS">Bonus</option>
+                  <option value="OUT_PROMO">Promo</option>
+                  <option value="OUT_SAMPLE">Sample</option>
+                  <option value="OUT_DAMAGED">Barang Rusak</option>
+                  <option value="OUT_EXPIRED">Barang Kedaluwarsa</option>
+                </select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="manualOutQty">Kuantitas</Label>
+                <Input
+                  id="manualOutQty"
+                  type="number"
+                  min="1"
+                  required
+                  value={manualOutQty}
+                  onChange={(e) => setManualOutQty(e.target.value)}
+                  disabled={isManualOutLoading}
+                  className="bg-background"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="manualOutReason">Alasan / Catatan</Label>
+                <Input
+                  id="manualOutReason"
+                  type="text"
+                  required
+                  placeholder="Wajib diisi..."
+                  value={manualOutReason}
+                  onChange={(e) => setManualOutReason(e.target.value)}
+                  disabled={isManualOutLoading}
+                  className="bg-background"
+                />
+              </div>
+            </div>
+
+            <Button type="submit" variant="secondary" disabled={isManualOutLoading || !manualOutProduct} className="w-full sm:w-auto mt-2">
+              {isManualOutLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Box className="mr-2 h-4 w-4" />}
+              Catat Pengeluaran
             </Button>
           </form>
         </CardContent>

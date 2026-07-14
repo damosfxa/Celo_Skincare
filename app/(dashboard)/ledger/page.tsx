@@ -126,9 +126,11 @@ export default function LedgerPage() {
                               <TableCell className="whitespace-nowrap text-muted-foreground text-sm">
                                 {formatDate(entry.created_at)}
                               </TableCell>
-                              <TableCell className="font-mono text-xs max-w-[120px] truncate flex items-center justify-between" title={entry.batch_id}>
-                                <span>{entry.batch_id}</span>
-                                {entry.batch_id !== "-" && <QrGeneratorModal batchId={entry.batch_id} />}
+                              <TableCell className="font-mono text-xs">
+                                <div className="flex items-center justify-between gap-2" title={entry.batch_id}>
+                                  <span className="truncate max-w-[90px]">{entry.batch_id}</span>
+                                  {entry.batch_id !== "-" && <QrGeneratorModal batchId={entry.batch_id} />}
+                                </div>
                               </TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="text-[10px] uppercase tracking-wider">

@@ -114,7 +114,7 @@ export default function PanduanPage() {
                 Scan QR di kardus (atau ketik manual kode batch), lalu isi jumlah fisik yang dihitung.
               </li>
               <li>
-                Kalau semua sudah dihitung, klik <strong>"Tutup Sesi"</strong> — sistem otomatis catat selisihnya ke Ledger.
+                Kalau semua sudah dihitung, klik <strong>"Tutup Sesi"</strong>. Sistem otomatis catat selisihnya ke Ledger.
               </li>
             </ul>
           </CardContent>

@@ -32,3 +32,30 @@ export function useExpiringNotifications() {
     mutate,
   };
 }
+
+export type TiktokClaim = {
+  id: string;
+  order_id: string;
+  external_order_id: string;
+  order_item_id: string;
+  sku: string;
+  name: string;
+  qty: number;
+  condition: string;
+  claim_deadline: string;
+  inspected_by: string;
+  inspected_at: string;
+  created_at: string;
+  days_remaining: number;
+};
+
+export function useTiktokClaims() {
+  const { data, error, isLoading, mutate } = useSWR<TiktokClaim[]>('/api/notifications/tiktok-claims', fetcher);
+
+  return {
+    claims: data || [],
+    isLoading,
+    isError: error,
+    mutate,
+  };
+}

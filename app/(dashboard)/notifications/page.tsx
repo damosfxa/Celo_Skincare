@@ -1,13 +1,14 @@
 "use client";
 
-import { useExpiringNotifications } from "@/hooks/useNotifications";
+import { useExpiringNotifications, useTiktokClaims } from "@/hooks/useNotifications";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Bell, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Loader2, Bell, AlertTriangle, ShieldCheck, CheckCircle2, Ticket } from "lucide-react";
 
 export default function NotificationsPage() {
   const { notifications, isLoading, isError } = useExpiringNotifications();
+  const { claims, isLoading: isLoadingClaims, isError: isErrorClaims } = useTiktokClaims();
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "-";
@@ -29,6 +30,25 @@ export default function NotificationsPage() {
       return <Badge variant="outline" className="text-amber-500 border-amber-500 whitespace-nowrap">Peringatan ({days} hari)</Badge>;
     }
     return <Badge variant="outline" className="text-muted-foreground whitespace-nowrap">Aman ({days} hari)</Badge>;
+  };
+
+  const getClaimDaysBadge = (days: number) => {
+    if (days < 0) {
+      return <Badge variant="outline" className="text-muted-foreground whitespace-nowrap">Hangus</Badge>;
+    }
+    if (days <= 7) {
+      return <Badge variant="outline" className="text-red-500 border-red-500 whitespace-nowrap">Kritis ({days} hari)</Badge>;
+    }
+    if (days <= 14) {
+      return <Badge variant="outline" className="text-amber-500 border-amber-500 whitespace-nowrap">Peringatan ({days} hari)</Badge>;
+    }
+    return <Badge variant="outline" className="text-emerald-500 border-emerald-500 whitespace-nowrap">Aman ({days} hari)</Badge>;
+  };
+
+  const getConditionBadge = (cond: string) => {
+    if (cond === 'PENDING_INSPECTION') return <Badge variant="outline" className="text-amber-500 border-amber-500 whitespace-nowrap">Menunggu Inspeksi</Badge>;
+    if (cond === 'DAMAGED' || cond === 'LOST') return <Badge variant="outline" className="text-red-500 border-red-500 whitespace-nowrap">{cond === 'DAMAGED' ? 'Barang Rusak' : 'Barang Hilang'}</Badge>;
+    return <Badge variant="outline" className="whitespace-nowrap">{cond}</Badge>;
   };
 
   return (
@@ -94,6 +114,72 @@ export default function NotificationsPage() {
                       <TableCell className="text-right font-medium">{item.current_qty}</TableCell>
                       <TableCell className="text-right">
                         {getStatusBadge(item.days_remaining)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Ticket className="h-5 w-5 text-primary" />
+            Klaim TikTok Menunggu Diajukan
+          </CardTitle>
+          <CardDescription>
+            Daftar retur TikTok Shop bermasalah (rusak/hilang) yang harus segera diklaim ke platform sebelum hangus.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoadingClaims ? (
+            <div className="flex justify-center p-8 text-muted-foreground">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span className="ml-2">Memuat data klaim...</span>
+            </div>
+          ) : isErrorClaims ? (
+            <div className="text-destructive p-4 border rounded-md bg-destructive/10">
+              Gagal memuat data klaim TikTok.
+            </div>
+          ) : claims.length === 0 ? (
+            <div className="text-center p-8 border border-dashed rounded-md text-muted-foreground flex flex-col items-center">
+              <CheckCircle2 className="h-12 w-12 text-emerald-500 mb-3 opacity-80" />
+              <p className="font-medium text-foreground">Semua Aman</p>
+              <p className="text-sm mt-1">Tidak ada klaim TikTok yang perlu ditindaklanjuti saat ini.</p>
+            </div>
+          ) : (
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>SKU / Produk</TableHead>
+                    <TableHead>Order ID</TableHead>
+                    <TableHead className="text-right">Qty</TableHead>
+                    <TableHead>Kondisi</TableHead>
+                    <TableHead>Batas Klaim</TableHead>
+                    <TableHead className="text-right">Sisa Hari</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {claims.map((claim) => (
+                    <TableRow key={claim.id}>
+                      <TableCell>
+                        <div className="font-medium">{claim.sku}</div>
+                        <div className="text-sm text-muted-foreground">{claim.name}</div>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">{claim.external_order_id}</TableCell>
+                      <TableCell className="text-right font-medium">{claim.qty}</TableCell>
+                      <TableCell>
+                        {getConditionBadge(claim.condition)}
+                      </TableCell>
+                      <TableCell className={claim.days_remaining <= 7 ? "text-destructive font-medium" : ""}>
+                        {formatDate(claim.claim_deadline)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {getClaimDaysBadge(claim.days_remaining)}
                       </TableCell>
                     </TableRow>
                   ))}

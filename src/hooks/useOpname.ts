@@ -26,6 +26,14 @@ export type OpnameItem = {
   system_qty?: number;
   variance?: number;
   created_at?: string;
+  product_batches?: {
+    batch_code: string;
+    product_id: string;
+    products?: {
+      sku: string;
+      name: string;
+    };
+  };
 };
 
 // Fetch list of sessions

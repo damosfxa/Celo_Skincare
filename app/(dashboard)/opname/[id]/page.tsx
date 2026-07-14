@@ -235,7 +235,16 @@ export default function OpnameSessionDetail() {
                 <TableBody>
                   {session.items.map((item, idx) => (
                     <TableRow key={idx}>
-                      <TableCell className="font-mono text-sm font-medium">{item.batch_id}</TableCell>
+                      <TableCell>
+                        <div className="font-mono text-sm font-medium">
+                          {item.product_batches?.batch_code || item.batch_id}
+                        </div>
+                        {item.product_batches?.products && (
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {item.product_batches.products.sku} - {item.product_batches.products.name}
+                          </div>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right text-muted-foreground">{item.system_qty ?? "-"}</TableCell>
                       <TableCell className="text-right font-medium">
                         {item.physical_qty === null ? (

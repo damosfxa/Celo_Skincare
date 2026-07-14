@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Package, FileText, ArrowLeftRight, ClipboardList, Activity, LogOut, Bell, Menu, BookOpen } from "lucide-react";
+import { Package, FileText, Repeat, ScanBarcode, Beaker, LogOut, Bell, Menu, BookOpen } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
@@ -21,9 +21,9 @@ export default async function DashboardLayout({
   const navItems = [
     { name: "Produk & Batch", href: "/products", icon: Package },
     { name: "Ledger", href: "/ledger", icon: FileText },
-    { name: "Retur", href: "/returns", icon: ArrowLeftRight },
-    { name: "Stok Opname", href: "/opname", icon: ClipboardList },
-    { name: "Simulasi", href: "/simulation", icon: Activity },
+    { name: "Retur", href: "/returns", icon: Repeat },
+    { name: "Stok Opname", href: "/opname", icon: ScanBarcode },
+    { name: "Simulasi", href: "/simulation", icon: Beaker },
     { name: "Notifikasi", href: "/notifications", icon: Bell },
     { name: "Panduan", href: "/panduan", icon: BookOpen },
   ];

@@ -38,7 +38,7 @@ export default function PanduanPage() {
                 Tambah produk baru pakai tombol <strong>"Tambah Produk"</strong>. Pilih tipe: <em>"Reguler"</em> untuk produk fisik biasa, <em>"Bundle"</em> untuk paket gabungan beberapa produk.
               </li>
               <li>
-                Kalau produk baru barang fisik datang dari maklon, catat lewat <strong>"Barang Masuk (Maklon)"</strong> — isi produk, kode batch, tanggal kedaluwarsa, dan jumlahnya.
+                Kalau produk baru barang fisik datang dari maklon, catat lewat <strong>"Barang Masuk (Maklon)"</strong>. Isi produk, kode batch, tanggal kedaluwarsa, dan jumlahnya.
               </li>
               <li>
                 Klik nama produk di tabel untuk lihat detail dan (khusus produk Bundle) atur resep komposisinya.
@@ -61,13 +61,13 @@ export default function PanduanPage() {
           <CardContent>
             <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
               <li>
-                Ini "buku besar" tempat semua pergerakan stok tercatat otomatis — <strong>gak perlu diisi manual</strong>.
+                Ini "buku besar" tempat semua pergerakan stok tercatat otomatis. <strong>Gak perlu diisi manual</strong>.
               </li>
               <li>
                 Pilih produk di tab <strong>"Drilldown Produk"</strong> untuk lihat riwayat lengkap kenapa stok produk itu jadi sekian.
               </li>
               <li>
-                Tab <strong>"Anomali Harian"</strong> otomatis ngecek kejanggalan sistem tiap hari — kalau ada tanda ⚠️, perlu ditelusuri.
+                Tab <strong>"Anomali Harian"</strong> otomatis ngecek kejanggalan sistem tiap hari. Kalau ada tanda ⚠️, perlu ditelusuri.
               </li>
             </ul>
           </CardContent>
@@ -142,7 +142,7 @@ export default function PanduanPage() {
                 <strong>"Impor CSV"</strong> untuk masukin banyak pesanan sekaligus dari file.
               </li>
               <li>
-                <strong>"Mutasi Keluar Manual"</strong> untuk catat barang keluar di luar pesanan (bonus, promo, sample, rusak, kedaluwarsa) — <strong>WAJIB</strong> isi alasan.
+                <strong>"Mutasi Keluar Manual"</strong> untuk catat barang keluar di luar pesanan (bonus, promo, sample, rusak, kedaluwarsa). <strong>WAJIB</strong> isi alasan.
               </li>
             </ul>
           </CardContent>

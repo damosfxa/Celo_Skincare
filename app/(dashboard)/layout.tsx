@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Package, FileText, ArrowLeftRight, ClipboardList, Activity, LogOut, Bell, Menu } from "lucide-react";
+import { Package, FileText, ArrowLeftRight, ClipboardList, Activity, LogOut, Bell, Menu, BookOpen } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
@@ -25,6 +25,7 @@ export default async function DashboardLayout({
     { name: "Stok Opname", href: "/opname", icon: ClipboardList },
     { name: "Simulasi", href: "/simulation", icon: Activity },
     { name: "Notifikasi", href: "/notifications", icon: Bell },
+    { name: "Panduan", href: "/panduan", icon: BookOpen },
   ];
 
   return (

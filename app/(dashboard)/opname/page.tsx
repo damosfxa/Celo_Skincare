@@ -107,7 +107,7 @@ export default function OpnameSessionsPage() {
                       <TableCell className="text-sm">{formatDate(session.created_at)}</TableCell>
                       <TableCell className="text-sm">{formatDate(session.closed_at || "")}</TableCell>
                       <TableCell className="text-right">
-                        <Link href={`/opname/${session.id}`}>
+                        <Link href={`/opname/${session.id}`} prefetch={false}>
                           <Button variant={session.status === "OPEN" ? "default" : "outline"} size="sm">
                             {session.status === "OPEN" ? "Lanjutkan" : "Lihat Detail"}
                           </Button>

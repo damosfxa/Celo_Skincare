@@ -5,20 +5,18 @@ import { createProductSchema } from "@/lib/validators/product";
 export async function GET() {
   const supabase = await createClient();
 
-  const { data: products, error: productsError } = await supabase
-    .from("products")
-    .select("id, sku, name, is_bundle");
-  if (productsError) return handleError(productsError);
+  const [productsResult, stockResult] = await Promise.all([
+    supabase.from("products").select("id, sku, name, is_bundle"),
+    supabase.from("v_product_stock").select("product_id, current_qty"),
+  ]);
 
-  const { data: stock, error: stockError } = await supabase
-    .from("v_product_stock")
-    .select("product_id, current_qty");
-  if (stockError) return handleError(stockError);
+  if (productsResult.error) return handleError(productsResult.error);
+  if (stockResult.error) return handleError(stockResult.error);
 
   const stockMap = new Map(
-    (stock ?? []).map((s: any) => [s.product_id, s.current_qty])
+    (stockResult.data ?? []).map((s: any) => [s.product_id, s.current_qty])
   );
-  const result = (products ?? []).map((p: any) => ({
+  const result = (productsResult.data ?? []).map((p: any) => ({
     ...p,
     current_qty: stockMap.get(p.id) ?? 0,
   }));

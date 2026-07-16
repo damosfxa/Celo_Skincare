@@ -17,10 +17,7 @@ Panduan ini ditulis untuk operator gudang dan admin yang memakai sistem sehari-h
 
 ## Login & Kredensial
 
-Buka [stok-rekonsiliasi-skincare.vercel.app](https://stok-rekonsiliasi-skincare.vercel.app), login dengan:
-
-- **Email:** `admin@gmail.com`
-- **Password:** `admin123`
+Buka [stok-rekonsiliasi-skincare.vercel.app](https://stok-rekonsiliasi-skincare.vercel.app). Kredensial login dikirim terpisah lewat catatan private (tidak dicantumkan di sini karena repo ini publik).
 
 ## Prinsip Dasar Sistem
 

@@ -28,9 +28,7 @@ Sistem ini menjawabnya lewat satu prinsip inti: **tidak ada angka stok yang beru
 ## Demo
 
 - **Live URL:** https://stok-rekonsiliasi-skincare.vercel.app
-- **Kredensial testing:**
-  - Email: `admin@gmail.com`
-  - Password: `admin123`
+- **Kredensial testing:** dikirim terpisah lewat catatan private submission (bukan di repo publik ini, untuk mencegah akses tidak sah ke data demo).
 
 <!-- TODO: tambahkan screenshot halaman Produk & Batch, Ledger, dan Stok Opname di sini setelah upload gambar ke repo (folder docs/screenshots/), contoh:
 ![Halaman Produk & Batch](docs/screenshots/produk-batch.png)

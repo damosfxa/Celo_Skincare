@@ -36,12 +36,6 @@ Sistem ini menjawabnya lewat satu prinsip inti: **tidak ada angka stok yang beru
 ![Halaman Produk & Batch](docs/screenshots/produk-batch.png)
 -->
 
-## Dokumentasi & Referensi
-
-- [Panduan Pengguna (`PANDUAN_PENGGUNA.md`)](./PANDUAN_PENGGUNA.md) — Dokumentasi fitur lengkap dan tata cara pemakaian aplikasi untuk *end-user* / operator.
-- [Workflow Sistem (`workflow.md`)](./workflow.md) — Penjelasan alur teknis dan diagram rekonsiliasi stok.
-- [Skema Database Supabase (`migrations/`)](./migrations/) — *Snapshot* statis berisi *script SQL* untuk nge-*build* ulang *database*, lengkap dengan *View*, *Function/RPC*, *Trigger*, dan RLS.
-
 ## Tech Stack
 
 | Teknologi | Alasan Pemilihan |
@@ -71,7 +65,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
 ### 3. Setup database
-Jalankan file SQL di folder [`migrations/`](./migrations/) secara berurutan lewat Supabase SQL Editor (project Supabase baru/kosong). Urutan dan penjelasan lengkap ada di [`migrations/README.md`](./migrations/README.md).
+Jalankan file SQL di folder `migrations/` secara berurutan lewat Supabase SQL Editor (project Supabase baru/kosong). Urutan dan penjelasan lengkap ada di `migrations/README.md`.
 
 ### 4. Jalankan aplikasi
 

@@ -38,7 +38,7 @@ Sistem ini menjawabnya lewat satu prinsip inti: **tidak ada angka stok yang beru
 
 ## Alur Proses Bisnis Utama (Workflow)
 
-Dokumen ini menjelaskan alur bisnis inti sistem lewat diagram. Untuk detail panduan operator, lihat [`SUPPORT.md`](./SUPPORT.md).
+Dokumen ini menjelaskan alur bisnis inti sistem lewat diagram. Untuk detail panduan operator, lihat [`PANDUAN_PENGGUNA.md`](./PANDUAN_PENGGUNA.md).
 
 ### Flow 1 — Kapan Stok Benar-Benar Berkurang
 
@@ -84,7 +84,7 @@ flowchart TD
 
 ## Dokumentasi & Referensi
 
-- [Panduan Pengguna (`SUPPORT.md`)](./SUPPORT.md) — Dokumentasi fitur lengkap dan tata cara pemakaian aplikasi untuk *end-user* / operator.
+- [Panduan Pengguna (`PANDUAN_PENGGUNA.md`)](./PANDUAN_PENGGUNA.md) — Dokumentasi fitur lengkap dan tata cara pemakaian aplikasi untuk *end-user* / operator.
 - [Skema Database Supabase (`migrations/`)](./migrations/) — *Snapshot* statis berisi *script SQL* untuk nge-*build* ulang *database*, lengkap dengan *View*, *Function/RPC*, *Trigger*, dan RLS.
 
 ## Tech Stack

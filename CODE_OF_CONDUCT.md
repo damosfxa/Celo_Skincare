@@ -1,44 +1,29 @@
-# Contributor Covenant Code of Conduct
+# Kode Etik Komunitas
 
-## Our Pledge
+## Ikrar Kami
 
-We as members, contributors, and leaders pledge to make participation in our
-community a harassment-free experience for everyone, regardless of age, body
-size, visible or invisible disability, ethnicity, sex characteristics, gender
-identity and expression, level of experience, education, socio-economic status,
-nationality, personal appearance, race, religion, or sexual identity
-and orientation.
+Sebagai anggota, kontributor, dan pemimpin, kami berikrar untuk menjadikan partisipasi dalam komunitas kami sebagai pengalaman yang bebas dari pelecehan bagi semua orang, tanpa memandang usia, ukuran tubuh, disabilitas, etnis, karakteristik seks, identitas gender, tingkat pengalaman, pendidikan, status sosial ekonomi, kebangsaan, penampilan fisik, ras, agama, atau orientasi seksual.
 
-We pledge to act and interact in ways that contribute to an open, welcoming,
-diverse, inclusive, and healthy community.
+Kami berikrar untuk bertindak dan berinteraksi dengan cara yang berkontribusi pada komunitas yang terbuka, ramah, beragam, inklusif, dan sehat.
 
-## Our Standards
+## Standar Perilaku
 
-Examples of behavior that contributes to a positive environment for our
-community include:
+Contoh perilaku yang mendukung lingkungan positif meliputi:
 
-* Demonstrating empathy and kindness toward other people
-* Being respectful of differing opinions, viewpoints, and experiences
-* Giving and gracefully accepting constructive feedback
-* Accepting responsibility and apologizing to those affected by our mistakes,
-  and learning from the experience
-* Focusing on what is best not just for us as individuals, but for the
-  overall community
+* Menunjukkan empati dan kebaikan terhadap orang lain
+* Menghargai perbedaan pendapat, sudut pandang, dan pengalaman
+* Memberikan dan menerima kritik membangun dengan lapang dada
+* Bertanggung jawab dan meminta maaf kepada mereka yang terdampak oleh kesalahan kita, serta belajar dari pengalaman tersebut
+* Fokus pada apa yang terbaik untuk komunitas secara keseluruhan
 
-Examples of unacceptable behavior include:
+Contoh perilaku yang tidak dapat diterima meliputi:
 
-* The use of sexualized language or imagery, and sexual attention or
-  advances of any kind
-* Trolling, insulting or derogatory comments, and personal or political attacks
-* Public or private harassment
-* Publishing others' private information, such as a physical or email
-  address, without their explicit permission
-* Other conduct which could reasonably be considered inappropriate in a
-  professional setting
+* Penggunaan bahasa atau gambar bernuansa seksual, serta godaan seksual dalam bentuk apa pun
+* *Trolling*, komentar menghina, serta serangan pribadi atau politik
+* Pelecehan secara publik maupun pribadi
+* Mempublikasikan informasi pribadi orang lain, seperti alamat rumah atau email, tanpa izin tertulis
+* Perilaku lain yang dianggap tidak pantas dalam lingkungan profesional
 
-## Enforcement Responsibilities
+## Tanggung Jawab Penegakan
 
-Community leaders are responsible for clarifying and enforcing our standards of
-acceptable behavior and will take appropriate and fair corrective action in
-response to any behavior that they deem inappropriate, threatening, offensive,
-or harmful.
+Pemimpin komunitas bertanggung jawab untuk memperjelas dan menegakkan standar perilaku kita, serta akan mengambil tindakan perbaikan yang adil dan sesuai sebagai respons terhadap perilaku yang tidak pantas, mengancam, menyinggung, atau berbahaya.

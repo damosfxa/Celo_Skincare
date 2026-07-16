@@ -1,22 +1,22 @@
-# Contributing to Stok Rekonsiliasi Skincare
+# Berkontribusi di Stok Rekonsiliasi Skincare
 
-First off, thank you for considering contributing to this project! It's people like you that make tools better for everyone.
+Terima kasih sudah mempertimbangkan untuk berkontribusi di proyek ini! Bantuanmu sangat berarti.
 
-## Development Workflow
+## Alur Pengembangan (Development Workflow)
 
-1. **Fork the repository** and create your branch from `main`.
-2. **Install dependencies** using `npm install`.
-3. **Set up Supabase** (locally or via a hosted project) and run the migrations found in the `migrations/` directory.
-4. **Make your changes**. If your change affects the UI, please ensure it follows the existing design language (Tailwind CSS + shadcn/ui).
-5. **Run tests** and verify that `npm run build` succeeds without errors.
-6. **Submit a Pull Request**.
+1. **Fork repositori ini** dan buat *branch* baru dari `main`.
+2. **Install dependencies** dengan menjalankan `npm install`.
+3. **Setup Supabase** (secara lokal atau project cloud) dan jalankan migrasi yang ada di folder `migrations/`.
+4. **Lakukan perubahan kode**. Pastikan perubahan UI mengikuti standar desain yang sudah ada (Tailwind CSS + shadcn/ui).
+5. **Jalankan testing** dan pastikan perintah `npm run build` berhasil tanpa error.
+6. **Kirimkan Pull Request (PR)**.
 
-## Issue Reporting
+## Melaporkan Bug (Issue Reporting)
 
-If you find a bug or have a feature request, please open an issue in the GitHub repository. Provide as much context as possible, including steps to reproduce bugs.
+Jika kamu menemukan bug atau punya ide fitur baru, silakan buka *Issue* di GitHub. Berikan detail selengkapnya, termasuk langkah-langkah untuk mereproduksi bug tersebut.
 
-## Pull Request Guidelines
+## Panduan Pull Request
 
-- Ensure your code follows the established formatting and linting rules.
-- Update the `README.md` or documentation (like `workflow.md`) if you introduce new features.
-- Provide a clear and descriptive PR title and description.
+- Pastikan kodemu mengikuti standar format (linting) yang sudah ada.
+- Jangan lupa perbarui `README.md` atau dokumentasi lain jika kamu menambahkan fitur baru.
+- Berikan judul dan deskripsi PR yang jelas.

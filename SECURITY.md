@@ -1,17 +1,17 @@
-# Security Policy
+# Kebijakan Keamanan (Security Policy)
 
-## Supported Versions
+## Versi yang Didukung
 
-Currently, this repository is a submission for a bounty challenge and does not have active LTS versions. However, we strive to keep the primary branch secure.
+Saat ini, repositori ini adalah hasil dari tantangan (bounty) dan tidak memiliki versi LTS aktif. Namun, kami berusaha menjaga cabang utama (main) tetap aman.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| `main`  | :white_check_mark: |
+| Versi | Status Dukungan    |
+| ----- | ------------------ |
+| `main`| :white_check_mark: |
 
-## Reporting a Vulnerability
+## Melaporkan Kerentanan
 
-If you discover a security vulnerability within this project, please do not disclose it publicly. 
+Jika kamu menemukan kerentanan keamanan di proyek ini, tolong jangan disebarluaskan ke publik.
 
-Instead, please send a direct message to the repository owner or open a confidential security advisory on GitHub. 
+Silakan kirim pesan langsung (DM) kepada pemilik repositori atau buka *confidential security advisory* di GitHub.
 
-We will review all reports and address verified vulnerabilities as quickly as possible.
+Kami akan meninjau semua laporan dan memperbaiki kerentanan yang terverifikasi secepat mungkin.

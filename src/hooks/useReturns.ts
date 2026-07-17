@@ -33,11 +33,11 @@ export function useReturns() {
   };
 }
 
-export async function inspectReturn(returnId: string, condition: string, photoUrl: string) {
+export async function inspectReturn(returnId: string, condition: string, photoUrl: string, expiryDate?: string) {
   const res = await fetch(`/api/returns/${returnId}/inspect`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ condition, photo_url: photoUrl }),
+    body: JSON.stringify({ condition, photo_url: photoUrl, expiry_date: expiryDate }),
   });
   const json = await res.json();
   if (!json.success) throw new Error(json.error?.message || 'Gagal memproses inspeksi retur');

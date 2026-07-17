@@ -22,6 +22,7 @@ export async function PATCH(
     p_condition: parsed.data.condition,
     p_inspected_by: userData.user.id,
     p_photo_url: parsed.data.photo_url ?? null,
+    p_expiry_date: parsed.data.expiry_date ?? null,
   });
   if (error) return handleError(error);
 

@@ -31,6 +31,7 @@ import { toast } from "sonner";
 const inspectSchema = z.object({
   condition: z.enum(["SELLABLE", "DAMAGED", "LOST"]),
   photo_url: z.string().optional(),
+  expiry_date: z.string().optional(),
 }).refine((data) => {
   if ((data.condition === "DAMAGED" || data.condition === "LOST") && !data.photo_url) {
     return false;
@@ -39,6 +40,14 @@ const inspectSchema = z.object({
 }, {
   message: "URL Foto wajib diisi untuk kondisi Rusak/Hilang",
   path: ["photo_url"],
+}).refine((data) => {
+  if (data.condition === "SELLABLE" && !data.expiry_date) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Tanggal kedaluwarsa wajib diisi untuk kondisi layak jual",
+  path: ["expiry_date"],
 });
 
 export default function ReturnsPage() {
@@ -51,8 +60,11 @@ export default function ReturnsPage() {
     defaultValues: {
       condition: "SELLABLE",
       photo_url: "",
+      expiry_date: "",
     },
   });
+
+  const condition = form.watch("condition");
 
   const supabase = createClient();
   const [isUploading, setIsUploading] = useState(false);
@@ -93,14 +105,14 @@ export default function ReturnsPage() {
   const handleOpenInspect = (item: ReturnItem) => {
     setSelectedReturn(item);
     setPhotoPreview(null);
-    form.reset({ condition: "SELLABLE", photo_url: "" });
+    form.reset({ condition: "SELLABLE", photo_url: "", expiry_date: "" });
   };
 
   const onSubmit = async (values: z.infer<typeof inspectSchema>) => {
     if (!selectedReturn) return;
     setIsSubmitting(true);
     try {
-      await inspectReturn(selectedReturn.id, values.condition, values.photo_url || "");
+      await inspectReturn(selectedReturn.id, values.condition, values.photo_url || "", values.expiry_date);
       toast.success(`Retur untuk order ${selectedReturn.order_id} berhasil diinspeksi.`);
       mutate();
       setSelectedReturn(null);
@@ -245,6 +257,26 @@ export default function ReturnsPage() {
                   <option value="LOST" className="bg-background">Hilang di Kurir (Write-off / Klaim)</option>
                 </select>
               </div>
+
+              {condition === "SELLABLE" && (
+                <div className="space-y-2 pt-2">
+                  <Label htmlFor="expiry_date">Tanggal Kedaluwarsa Batch Baru</Label>
+                  <Input
+                    id="expiry_date"
+                    type="date"
+                    disabled={isSubmitting}
+                    {...form.register("expiry_date")}
+                  />
+                  <p className="text-[0.8rem] text-muted-foreground">
+                    Retur layak jual dicatat sebagai batch baru terpisah — baca tanggal kedaluwarsa dari kemasan fisik barang.
+                  </p>
+                  {form.formState.errors.expiry_date && (
+                    <p className="text-sm font-medium text-destructive mt-1">
+                      {form.formState.errors.expiry_date.message}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-2 pt-2">
                 <Label htmlFor="photo" className="flex items-center gap-2">

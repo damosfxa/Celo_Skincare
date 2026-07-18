@@ -98,8 +98,14 @@ export default function SimulationPage() {
         toast.success(`Pesanan ${orderId} berhasil di-SHIPPED. Alokasi FEFO berjalan.`);
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: res.status || 'SHIPPED' } : o));
       } else if (action === 'cancel') {
-        await simulateCancelOrder(orderId);
-        toast.success(`Pesanan ${orderId} dibatalkan.`);
+        const res = await simulateCancelOrder(orderId);
+        
+        if (res?.needs_inspection) {
+          toast.info("Pembatalan diajukan, perlu inspeksi kondisi barang di halaman Retur");
+        } else {
+          toast.success(`Pesanan ${orderId} dibatalkan.`);
+        }
+        
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'CANCELLED' } : o));
       } else if (action === 'return') {
         await simulateReturnOrder(orderId);
@@ -419,15 +425,27 @@ export default function SimulationPage() {
                           </>
                         )}
                         {(order.status === 'SHIPPED' || order.status === 'IN_TRANSIT') && (
-                          <Button 
-                            variant="secondary" 
-                            size="sm"
-                            disabled={loadingAction !== null}
-                            onClick={() => handleAction(order.id, 'return')}
-                          >
-                            {loadingAction === `${order.id}-return` ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="mr-1 h-3 w-3" />}
-                            Simulate Return
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="secondary" 
+                              size="sm"
+                              disabled={loadingAction !== null}
+                              onClick={() => handleAction(order.id, 'return')}
+                            >
+                              {loadingAction === `${order.id}-return` ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="mr-1 h-3 w-3" />}
+                              Simulate Return
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              className="text-destructive hover:bg-destructive/10"
+                              disabled={loadingAction !== null}
+                              onClick={() => handleAction(order.id, 'cancel')}
+                            >
+                              {loadingAction === `${order.id}-cancel` ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="mr-1 h-3 w-3" />}
+                              Batalkan
+                            </Button>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>

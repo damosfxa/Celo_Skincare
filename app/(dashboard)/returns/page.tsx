@@ -32,13 +32,14 @@ const inspectSchema = z.object({
   condition: z.enum(["SELLABLE", "DAMAGED", "LOST"]),
   photo_url: z.string().optional(),
   expiry_date: z.string().optional(),
+  type: z.string().optional(),
 }).refine((data) => {
-  if ((data.condition === "DAMAGED" || data.condition === "LOST") && !data.photo_url) {
+  if (data.type === "RETURN" && (data.condition === "DAMAGED" || data.condition === "LOST") && !data.photo_url) {
     return false;
   }
   return true;
 }, {
-  message: "URL Foto wajib diisi untuk kondisi Rusak/Hilang",
+  message: "URL Foto wajib diisi untuk kondisi Rusak/Hilang pada retur",
   path: ["photo_url"],
 }).refine((data) => {
   if (data.condition === "SELLABLE" && !data.expiry_date) {
@@ -61,6 +62,7 @@ export default function ReturnsPage() {
       condition: "SELLABLE",
       photo_url: "",
       expiry_date: "",
+      type: "RETURN",
     },
   });
 
@@ -105,7 +107,12 @@ export default function ReturnsPage() {
   const handleOpenInspect = (item: ReturnItem) => {
     setSelectedReturn(item);
     setPhotoPreview(null);
-    form.reset({ condition: "SELLABLE", photo_url: "", expiry_date: "" });
+    form.reset({ 
+      condition: "SELLABLE", 
+      photo_url: "", 
+      expiry_date: "",
+      type: item.type || "RETURN" 
+    });
   };
 
   const onSubmit = async (values: z.infer<typeof inspectSchema>) => {
@@ -181,7 +188,17 @@ export default function ReturnsPage() {
                 <TableBody>
                   {returns.map((item) => (
                     <TableRow key={item.id}>
-                      <TableCell className="font-mono text-xs">{item.order_id}</TableCell>
+                      <TableCell>
+                        <div className="font-mono text-xs">{item.order_id}</div>
+                        <div className="mt-1">
+                          <Badge 
+                            variant="outline" 
+                            className={item.type === 'CANCELLATION' ? 'text-blue-500 border-blue-500 text-[10px] px-1 py-0' : 'text-purple-500 border-purple-500 text-[10px] px-1 py-0'}
+                          >
+                            {item.type === 'CANCELLATION' ? 'Pembatalan' : 'Retur'}
+                          </Badge>
+                        </div>
+                      </TableCell>
                       <TableCell className="capitalize">{item.channel}</TableCell>
                       <TableCell className="text-sm">{formatDate(item.created_at)}</TableCell>
                       <TableCell className="text-sm text-amber-600 font-medium">{formatDate(item.claim_deadline || "")}</TableCell>
@@ -268,7 +285,10 @@ export default function ReturnsPage() {
                     {...form.register("expiry_date")}
                   />
                   <p className="text-[0.8rem] text-muted-foreground">
-                    Retur layak jual dicatat sebagai batch baru terpisah — baca tanggal kedaluwarsa dari kemasan fisik barang.
+                    {condition === "SELLABLE" &&
+                      (form.getValues("type") === "CANCELLATION"
+                        ? "Pembatalan layak jual dicatat sebagai batch baru terpisah — baca tanggal kedaluwarsa dari kemasan fisik barang."
+                        : "Retur layak jual dicatat sebagai batch baru terpisah — baca tanggal kedaluwarsa dari kemasan fisik barang.")}
                   </p>
                   {form.formState.errors.expiry_date && (
                     <p className="text-sm font-medium text-destructive mt-1">

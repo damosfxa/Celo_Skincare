@@ -9,8 +9,14 @@ export const simulateShipSchema = z.object({
   order_id: z.string().uuid(),
 });
 
+// order_item_id & qty opsional -- dipakai kalau order dibatalkan
+// SESUDAH shipped (butuh tau item mana). Kalau order masih PENDING,
+// field ini diabaikan sepenuhnya (cancel PENDING tidak butuh resolve
+// item apa pun, karena belum pernah menyentuh ledger).
 export const simulateCancelSchema = z.object({
   order_id: z.string().uuid(),
+  order_item_id: z.string().uuid().optional(),
+  qty: z.number().int().positive().optional(),
 });
 
 // order_item_id & qty dibuat opsional -- endpoint simulate/new tidak pernah

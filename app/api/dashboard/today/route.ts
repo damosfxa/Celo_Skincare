@@ -79,8 +79,8 @@ export async function GET() {
       id: `tiktok_claim-${claim.id}`,
       type: "tiktok_claim",
       priority: claimPriority(claim.days_remaining),
-      title: `Klaim TikTok ${claim.external_order_id} -- ${claim.days_remaining} hari lagi`,
-      detail: `${claim.condition === "PENDING_INSPECTION" ? "Belum diinspeksi" : claim.condition} -- ${claim.name} x${claim.qty}`,
+      title: `Klaim TikTok ${claim.external_order_id}, ${claim.days_remaining} hari lagi`,
+      detail: `${claim.condition === "PENDING_INSPECTION" ? "Belum diinspeksi" : claim.condition}, ${claim.name} x${claim.qty}`,
       href: "/returns",
     });
   }
@@ -90,7 +90,7 @@ export async function GET() {
       id: `expiring_batch-${batch.batch_id}`,
       type: "expiring_batch",
       priority: expiryPriority(batch.days_remaining),
-      title: `${batch.name} -- batch ${batch.batch_code} kedaluwarsa ${batch.days_remaining} hari lagi`,
+      title: `${batch.name}, batch ${batch.batch_code} kedaluwarsa ${batch.days_remaining} hari lagi`,
       detail: `Sisa ${batch.current_qty} unit`,
       href: "/products",
     });
@@ -102,7 +102,7 @@ export async function GET() {
       type: "anomaly",
       priority: anomaly.priority_level,
       title: anomaly.label,
-      detail: `${anomaly.anomaly_type} -- qty ${anomaly.leaked_qty}`,
+      detail: `${anomaly.anomaly_type}, qty ${anomaly.leaked_qty}`,
       href: "/ledger?tab=anomalies",
     });
   }

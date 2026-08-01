@@ -202,7 +202,7 @@ async function resolveOrderItemAndQty(
   if (items.length > 1) {
     throw new ServiceError(
       "AMBIGUOUS_ITEM",
-      "Order ini punya lebih dari 1 item -- sertakan order_item_id secara eksplisit",
+      "Order ini punya lebih dari 1 item, sertakan order_item_id secara eksplisit",
       422
     );
   }

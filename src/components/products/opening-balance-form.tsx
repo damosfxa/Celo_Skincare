@@ -100,7 +100,7 @@ export function OpeningBalanceForm() {
                 className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 {...form.register("product_id")}
               >
-                <option value="" className="bg-background text-muted-foreground">-- Pilih Produk --</option>
+                <option value="" className="bg-background text-muted-foreground">Pilih Produk</option>
                 {regularProducts.map(p => (
                   <option key={p.id} value={p.id} className="bg-background">
                     {p.sku} - {p.name}

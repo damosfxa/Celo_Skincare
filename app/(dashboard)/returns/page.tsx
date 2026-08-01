@@ -287,8 +287,8 @@ export default function ReturnsPage() {
                   <p className="text-[0.8rem] text-muted-foreground">
                     {condition === "SELLABLE" &&
                       (form.getValues("type") === "CANCELLATION"
-                        ? "Pembatalan layak jual dicatat sebagai batch baru terpisah — baca tanggal kedaluwarsa dari kemasan fisik barang."
-                        : "Retur layak jual dicatat sebagai batch baru terpisah — baca tanggal kedaluwarsa dari kemasan fisik barang.")}
+                        ? "Pembatalan layak jual dicatat sebagai batch baru terpisah. Baca tanggal kedaluwarsa dari kemasan fisik barang."
+                        : "Retur layak jual dicatat sebagai batch baru terpisah. Baca tanggal kedaluwarsa dari kemasan fisik barang.")}
                   </p>
                   {form.formState.errors.expiry_date && (
                     <p className="text-sm font-medium text-destructive mt-1">

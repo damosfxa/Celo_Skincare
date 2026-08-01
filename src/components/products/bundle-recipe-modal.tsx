@@ -135,7 +135,7 @@ export function BundleRecipeModal({ productId, isOpen, onClose }: BundleRecipeMo
                         className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         {...form.register(`components.${index}.component_product_id`)}
                       >
-                        <option value="">-- Pilih Produk Fisik --</option>
+                        <option value="">Pilih Produk Fisik</option>
                         {physicalProducts.map(p => (
                           <option key={p.id} value={p.id}>
                             {p.sku} - {p.name}

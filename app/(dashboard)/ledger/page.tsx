@@ -211,7 +211,7 @@ export default function LedgerPage() {
                   onChange={(e) => setSelectedProductId(e.target.value)}
                   className="flex h-10 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                 >
-                  <option value="" className="bg-background">-- Pilih Produk --</option>
+                  <option value="" className="bg-background">Pilih Produk</option>
                   {products.map((p) => (
                     <option key={p.id} value={p.id} className="bg-background">
                       {p.sku} - {p.name}
@@ -445,7 +445,7 @@ export default function LedgerPage() {
                           </TableCell>
                           <TableCell>{formatDate(anom.detected_at)}</TableCell>
                           <TableCell className="text-xs">
-                            {anom.channel ? `${anom.channel} · ${anom.external_order_id}` : '—'}
+                            {anom.channel ? `${anom.channel} · ${anom.external_order_id}` : '-'}
                           </TableCell>
                           <TableCell className="text-xs">{anom.label}</TableCell>
                           <TableCell className="text-right font-medium text-destructive">

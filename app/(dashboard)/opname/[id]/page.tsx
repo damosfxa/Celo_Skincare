@@ -18,6 +18,7 @@ import { toast } from "sonner";
 const formSchema = z.object({
   batch_id: z.string().min(1, "Batch ID wajib diisi"),
   physical_qty: z.number({ message: "Wajib berupa angka" }).min(0, "Kuantitas minimal 0"),
+  discrepancy_reason: z.string().optional(),
 });
 
 export default function OpnameSessionDetail() {
@@ -28,6 +29,7 @@ export default function OpnameSessionDetail() {
   const { session, isLoading: isLoadingSession, mutate } = useOpnameSessionDetail(sessionId);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [showDiscrepancyReason, setShowDiscrepancyReason] = useState(false);
 
   const isSessionOpen = session?.status === "OPEN";
 
@@ -36,11 +38,39 @@ export default function OpnameSessionDetail() {
     defaultValues: {
       batch_id: "",
       physical_qty: 0,
+      discrepancy_reason: "",
     },
   });
 
   const batchInputRef = useRef<HTMLInputElement>(null);
   const qtyInputRef = useRef<HTMLInputElement>(null);
+
+  const watchedBatchId = form.watch("batch_id");
+  const watchedPhysicalQty = form.watch("physical_qty");
+
+  // Logic memunculkan Alasan Selisih
+  useEffect(() => {
+    if (!watchedBatchId) {
+      setShowDiscrepancyReason(false);
+      return;
+    }
+    
+    // Cari item di session berdasarkan batch_id atau batch_code
+    const item = session?.items?.find(
+      (i) => i.batch_id === watchedBatchId || i.product_batches?.batch_code === watchedBatchId
+    );
+    
+    if (item && item.system_qty !== undefined) {
+      // Jika tidak sama dengan sistem, tampilkan dropdown alasan
+      if (watchedPhysicalQty !== item.system_qty) {
+        setShowDiscrepancyReason(true);
+      } else {
+        setShowDiscrepancyReason(false);
+      }
+    } else {
+      setShowDiscrepancyReason(false);
+    }
+  }, [watchedBatchId, watchedPhysicalQty, session]);
 
   // Auto focus input scanner
   useEffect(() => {
@@ -50,11 +80,22 @@ export default function OpnameSessionDetail() {
   }, [isSessionOpen]);
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    // Validasi lokal sebelum kirim ke backend
+    if (showDiscrepancyReason && !values.discrepancy_reason) {
+      form.setError("discrepancy_reason", { message: "Alasan selisih wajib dipilih karena stok fisik berbeda dengan sistem" });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      await submitOpnameItem(sessionId, values.batch_id, values.physical_qty);
+      await submitOpnameItem(sessionId, values.batch_id, values.physical_qty, values.discrepancy_reason);
       toast.success(`Batch ${values.batch_id} berhasil dicatat.`);
-      form.reset();
+      form.reset({
+        batch_id: "",
+        physical_qty: 0,
+        discrepancy_reason: "",
+      });
+      setShowDiscrepancyReason(false);
       mutate(); // Refresh the session data
       // Refocus the input for the next scan
       setTimeout(() => {
@@ -164,7 +205,7 @@ export default function OpnameSessionDetail() {
                       form.register("batch_id").ref(e);
                       batchInputRef.current = e;
                     }}
-                    className="font-mono text-lg py-6"
+                    className="font-mono text-lg h-[72px]"
                   />
                   <CameraScanner onScan={handleScan} />
                 </div>
@@ -186,7 +227,7 @@ export default function OpnameSessionDetail() {
                     form.register("physical_qty").ref(e);
                     qtyInputRef.current = e;
                   }}
-                  className="text-lg py-6 text-center"
+                  className="text-lg h-[72px] text-center"
                 />
                 {form.formState.errors.physical_qty && (
                   <p className="text-sm font-medium text-destructive">
@@ -195,8 +236,33 @@ export default function OpnameSessionDetail() {
                 )}
               </div>
 
+              {/* KOLOM BARU: Alasan Selisih */}
+              {showDiscrepancyReason && (
+                <div className="w-full sm:w-48 space-y-2">
+                  <Label htmlFor="discrepancy_reason">Alasan Selisih</Label>
+                  <select
+                    id="discrepancy_reason"
+                    disabled={isSubmitting || isClosing}
+                    {...form.register("discrepancy_reason")}
+                    className="flex h-[72px] w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="" disabled>-- Pilih Alasan --</option>
+                    <option value="damaged">Barang Rusak</option>
+                    <option value="lost">Barang Hilang</option>
+                    <option value="found_extra">Ditemukan Lebih</option>
+                    <option value="miscount_previous">Salah Hitung Sebelumnya</option>
+                    <option value="other">Lainnya</option>
+                  </select>
+                  {form.formState.errors.discrepancy_reason && (
+                    <p className="text-sm font-medium text-destructive leading-tight">
+                      {form.formState.errors.discrepancy_reason.message}
+                    </p>
+                  )}
+                </div>
+              )}
+
               <div className="w-full sm:w-auto pt-2 sm:pt-8">
-                <Button type="submit" disabled={isSubmitting || isClosing} className="w-full py-6 px-6">
+                <Button type="submit" disabled={isSubmitting || isClosing} className="w-full h-[72px] px-6">
                   {isSubmitting ? (
                     <Loader2 className="h-5 w-5 animate-spin" />
                   ) : (

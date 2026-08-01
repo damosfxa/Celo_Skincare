@@ -1,14 +1,15 @@
 "use client";
 
-import { useExpiringNotifications, useTiktokClaims } from "@/hooks/useNotifications";
+import { useExpiringNotifications, useTiktokClaims, useUnverifiedOpeningBalances } from "@/hooks/useNotifications";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Bell, AlertTriangle, ShieldCheck, CheckCircle2, Ticket } from "lucide-react";
+import { Loader2, Bell, AlertTriangle, ShieldCheck, CheckCircle2, Ticket, ClipboardList } from "lucide-react";
 
 export default function NotificationsPage() {
   const { notifications, isLoading, isError } = useExpiringNotifications();
   const { claims, isLoading: isLoadingClaims, isError: isErrorClaims } = useTiktokClaims();
+  const { unverified, isLoading: isLoadingUnverified, isError: isErrorUnverified } = useUnverifiedOpeningBalances();
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "-";
@@ -61,6 +62,67 @@ export default function NotificationsPage() {
           </p>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ClipboardList className="h-5 w-5 text-primary" />
+            Stok Awal Belum Terverifikasi
+          </CardTitle>
+          <CardDescription>
+            Daftar batch dari input stok awal (opening balance) yang belum pernah dihitung secara fisik melalui Stok Opname.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoadingUnverified ? (
+            <div className="flex justify-center p-8 text-muted-foreground">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span className="ml-2">Memuat data stok awal...</span>
+            </div>
+          ) : isErrorUnverified ? (
+            <div className="text-destructive p-4 border rounded-md bg-destructive/10">
+              Gagal memuat data stok awal.
+            </div>
+          ) : unverified.length === 0 ? (
+            <div className="text-center p-8 border border-dashed rounded-md text-muted-foreground flex flex-col items-center">
+              <CheckCircle2 className="h-12 w-12 text-emerald-500 mb-3 opacity-80" />
+              <p className="font-medium text-foreground">Semua Stok Terverifikasi</p>
+              <p className="text-sm mt-1">Semua stok awal sudah terverifikasi lewat opname fisik.</p>
+            </div>
+          ) : (
+            <div className="rounded-md border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>SKU / Produk</TableHead>
+                    <TableHead>Batch ID / Code</TableHead>
+                    <TableHead className="text-right">Kuantitas</TableHead>
+                    <TableHead>Tanggal Input</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {unverified.map((item) => (
+                    <TableRow key={item.ledger_id}>
+                      <TableCell>
+                        <div className="font-medium">{item.sku}</div>
+                        <div className="text-sm text-muted-foreground">{item.name}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-mono text-sm">{item.batch_id}</div>
+                        <div className="text-xs text-muted-foreground">{item.batch_code}</div>
+                      </TableCell>
+                      <TableCell className="text-right font-medium">{item.qty_delta}</TableCell>
+                      <TableCell>
+                        {formatDate(item.created_at)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

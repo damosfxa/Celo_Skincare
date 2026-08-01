@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Package, FileText, Repeat, ScanBarcode, Beaker, Bell, BookOpen } from "lucide-react";
+import { LayoutDashboard, Package, FileText, Repeat, ScanBarcode, Beaker, Bell, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
+  { name: "Tugas Hari Ini", href: "/", icon: LayoutDashboard },
   { name: "Produk & Batch", href: "/products", icon: Package },
   { name: "Ledger", href: "/ledger", icon: FileText },
   { name: "Retur", href: "/returns", icon: Repeat },
@@ -23,15 +24,15 @@ export function NavLinks() {
       {navItems.map((item) => {
         // Active if exact match or if it's a sub-route (e.g. /products/123)
         const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
-        
+
         return (
           <Link
             key={item.name}
             href={item.href}
             className={cn(
               "flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors",
-              isActive 
-                ? "bg-primary text-primary-foreground" 
+              isActive
+                ? "bg-primary text-primary-foreground"
                 : "hover:bg-accent hover:text-accent-foreground text-muted-foreground"
             )}
           >

@@ -2,19 +2,43 @@
 
 import { useState } from "react";
 import { useProducts } from "@/hooks/useProducts";
-import { useReconciliationDrilldown, useDailyAnomalies } from "@/hooks/useLedger";
+import { useReconciliationDrilldown, useDailyAnomalies, correctLedgerEntry, LedgerEntry } from "@/hooks/useLedger";
 import { QrGeneratorModal } from "@/components/products/qr-generator-modal";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, AlertTriangle, ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
+import { Loader2, AlertTriangle, ArrowDownRight, ArrowUpRight, Edit, FileDigit, Download } from "lucide-react";
 
 export default function LedgerPage() {
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") === "anomalies" ? "anomalies" : "drilldown";
   const [selectedProductId, setSelectedProductId] = useState<string>("");
 
+  // States untuk Filter
+  const [filterMovementType, setFilterMovementType] = useState<string>("all");
+  const [filterChannel, setFilterChannel] = useState<string>("all");
+  const [filterDateFrom, setFilterDateFrom] = useState<string>("");
+  const [filterDateTo, setFilterDateTo] = useState<string>("");
+
+  type CorrectionState = {
+    entry: LedgerEntry;
+    product: any;
+    step: 'input' | 'confirm';
+    qtyDelta: string;
+    note: string;
+  };
+  const [correctionState, setCorrectionState] = useState<CorrectionState | null>(null);
+  const [isCorrecting, setIsCorrecting] = useState(false);
+
   const { products, isLoading: isLoadingProducts } = useProducts();
-  const { data: drilldownData, isLoading: isLoadingDrilldown } = useReconciliationDrilldown(
+  const { data: drilldownData, isLoading: isLoadingDrilldown, mutate } = useReconciliationDrilldown(
     selectedProductId || undefined
   );
   const { anomalies, isLoading: isLoadingAnomalies } = useDailyAnomalies();
@@ -49,6 +73,114 @@ export default function LedgerPage() {
     return <span className="font-medium">{qty}</span>;
   };
 
+  const calculateBatchStock = (batchId: string) => {
+    if (!drilldownData?.ledger) return 0;
+    return drilldownData.ledger
+      .filter((e) => e.batch_id === batchId)
+      .reduce((sum, e) => sum + e.qty_delta, 0);
+  };
+
+  const handleCorrectionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!correctionState) return;
+
+    if (correctionState.step === 'input') {
+      if (!correctionState.qtyDelta || !correctionState.note) {
+        toast.error("Selisih dan catatan wajib diisi.");
+        return;
+      }
+      setCorrectionState({ ...correctionState, step: 'confirm' });
+    } else if (correctionState.step === 'confirm') {
+      setIsCorrecting(true);
+      try {
+        await correctLedgerEntry(correctionState.entry.id, parseInt(correctionState.qtyDelta, 10), correctionState.note);
+        toast.success("Koreksi ledger berhasil disimpan.");
+        mutate();
+        setCorrectionState(null);
+      } catch (error: any) {
+        toast.error(error.message);
+      } finally {
+        setIsCorrecting(false);
+      }
+    }
+  };
+
+  const runningBalances = drilldownData?.ledger
+    ? drilldownData.ledger.reduce((acc: number[], entry) => {
+        const prev = acc.length > 0 ? acc[acc.length - 1] : 0;
+        acc.push(prev + entry.qty_delta);
+        return acc;
+      }, [])
+    : [];
+
+  const uniqueMovementTypes = drilldownData?.ledger 
+    ? Array.from(new Set(drilldownData.ledger.map(e => e.movement_type)))
+    : [];
+
+  const filteredRows = drilldownData?.ledger
+    ? drilldownData.ledger.map((entry, idx) => ({ entry, idx })).filter(({ entry }) => {
+        let match = true;
+        
+        if (filterMovementType !== "all" && entry.movement_type !== filterMovementType) {
+          match = false;
+        }
+        
+        if (filterChannel !== "all") {
+          const entryChannel = entry.channel || "";
+          if (entryChannel.toLowerCase() !== filterChannel.toLowerCase()) {
+            match = false;
+          }
+        }
+        
+        if (filterDateFrom) {
+          if (new Date(entry.created_at) < new Date(filterDateFrom)) match = false;
+        }
+        
+        if (filterDateTo) {
+          const toDate = new Date(filterDateTo);
+          toDate.setHours(23, 59, 59, 999);
+          if (new Date(entry.created_at) > toDate) match = false;
+        }
+        
+        return match;
+      })
+    : [];
+
+  const handleExportCsv = () => {
+    if (!filteredRows || filteredRows.length === 0) {
+      toast.error("Tidak ada data untuk diekspor");
+      return;
+    }
+    
+    const headers = ["Waktu", "Batch ID", "Tipe Mutasi", "Channel", "Referensi", "Perubahan Qty", "Saldo Berjalan"];
+    
+    const rows = filteredRows.map(({ entry, idx }) => {
+      const waktu = formatDate(entry.created_at);
+      const batchId = entry.batch_id;
+      const type = entry.movement_type;
+      const channel = entry.channel || "-";
+      const reference = entry.reference_type ? `${entry.reference_type}: ${entry.reference_id}` : "-";
+      const qty = entry.qty_delta;
+      const saldo = runningBalances[idx] !== undefined ? runningBalances[idx] : 0;
+      
+      return [waktu, batchId, type, channel, reference, qty, saldo].join(";");
+    });
+    
+    const csvString = [headers.join(";"), ...rows].join("\n");
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    
+    const link = document.createElement("a");
+    link.href = url;
+    const selectedProduct = products.find(p => p.id === selectedProductId);
+    const skuForFilename = selectedProduct?.sku?.replace(/[^a-zA-Z0-9-]/g, "_") || "produk";
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.setAttribute("download", `ledger_${skuForFilename}_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -58,7 +190,7 @@ export default function LedgerPage() {
         </p>
       </div>
 
-      <Tabs defaultValue="drilldown" className="w-full">
+      <Tabs defaultValue={initialTab} className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="drilldown">Drilldown Produk</TabsTrigger>
           <TabsTrigger value="anomalies">Anomali Harian</TabsTrigger>
@@ -88,6 +220,68 @@ export default function LedgerPage() {
                 </select>
               </div>
 
+              {selectedProductId && !isLoadingDrilldown && drilldownData && (
+                <div className="mb-6 space-y-4 p-4 border rounded-lg bg-muted/20">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold">Filter Data Ledger</h3>
+                    <Button onClick={handleExportCsv} variant="outline" size="sm" className="h-8">
+                      <Download className="w-4 h-4 mr-2" /> Export CSV
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Tipe Mutasi</Label>
+                      <select
+                        value={filterMovementType}
+                        onChange={(e) => setFilterMovementType(e.target.value)}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      >
+                        <option value="all">Semua</option>
+                        {uniqueMovementTypes.map(type => (
+                          <option key={type} value={type}>{type.replace(/_/g, " ")}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Channel</Label>
+                      <select
+                        value={filterChannel}
+                        onChange={(e) => setFilterChannel(e.target.value)}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      >
+                        <option value="all">Semua</option>
+                        <option value="Shopee">Shopee</option>
+                        <option value="TikTok">TikTok</option>
+                        <option value="Offline">Offline</option>
+                        <option value="Internal">Internal</option>
+                      </select>
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Dari Tanggal</Label>
+                      <Input 
+                        type="date" 
+                        className="h-9 text-sm"
+                        value={filterDateFrom}
+                        onChange={(e) => setFilterDateFrom(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Sampai Tanggal</Label>
+                      <Input 
+                        type="date" 
+                        className="h-9 text-sm"
+                        value={filterDateTo}
+                        onChange={(e) => setFilterDateTo(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {!selectedProductId ? (
                 <div className="text-center p-8 border border-dashed rounded-md text-muted-foreground">
                   Silakan pilih produk terlebih dahulu untuk melihat riwayat ledger.
@@ -104,9 +298,9 @@ export default function LedgerPage() {
                     <span className="text-2xl font-bold">{drilldownData.current_qty.toLocaleString("id-ID")}</span>
                   </div>
 
-                  {drilldownData.ledger.length === 0 ? (
+                  {filteredRows.length === 0 ? (
                     <div className="text-center p-8 border border-dashed rounded-md text-muted-foreground">
-                      Belum ada pergerakan stok untuk produk ini.
+                      Belum ada pergerakan stok atau tidak ada data yang cocok dengan filter.
                     </div>
                   ) : (
                     <div className="rounded-md border">
@@ -118,10 +312,12 @@ export default function LedgerPage() {
                             <TableHead>Tipe Mutasi</TableHead>
                             <TableHead>Referensi</TableHead>
                             <TableHead className="text-right">Perubahan Qty</TableHead>
+                            <TableHead className="text-right">Saldo Berjalan</TableHead>
+                            <TableHead className="text-right w-[60px]">Aksi</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {drilldownData.ledger.map((entry, idx) => (
+                          {filteredRows.map(({ entry, idx }) => (
                             <TableRow key={idx}>
                               <TableCell className="whitespace-nowrap text-muted-foreground text-sm">
                                 {formatDate(entry.created_at)}
@@ -136,6 +332,11 @@ export default function LedgerPage() {
                                 <Badge variant="outline" className="text-[10px] uppercase tracking-wider">
                                   {entry.movement_type.replace(/_/g, " ")}
                                 </Badge>
+                                {entry.channel && (
+                                  <div className="mt-1 text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                                    {entry.channel}
+                                  </div>
+                                )}
                               </TableCell>
                               <TableCell className="text-muted-foreground text-sm">
                                 {entry.reference_type ? (
@@ -146,6 +347,35 @@ export default function LedgerPage() {
                               </TableCell>
                               <TableCell>
                                 {formatQty(entry.qty_delta)}
+                              </TableCell>
+                              <TableCell className="text-right font-medium">
+                                {runningBalances[idx] !== undefined ? runningBalances[idx].toLocaleString("id-ID") : "-"}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {(entry.movement_type === "IN_MAKLON" || entry.movement_type === "OUT_MANUAL") ? (
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="h-7 w-7 text-muted-foreground hover:text-foreground" 
+                                    title="Koreksi Entri"
+                                    onClick={() => {
+                                      const product = products.find(p => p.id === selectedProductId);
+                                      if (product) {
+                                        setCorrectionState({
+                                          entry,
+                                          product,
+                                          step: 'input',
+                                          qtyDelta: '',
+                                          note: ''
+                                        });
+                                      }
+                                    }}
+                                  >
+                                    <Edit className="h-3.5 w-3.5" />
+                                  </Button>
+                                ) : (
+                                  <span className="text-muted-foreground">-</span>
+                                )}
                               </TableCell>
                             </TableRow>
                           ))}
@@ -195,22 +425,31 @@ export default function LedgerPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Tanggal</TableHead>
-                        <TableHead>Produk ID</TableHead>
-                        <TableHead className="text-right">Stok Diharapkan</TableHead>
-                        <TableHead className="text-right">Stok Aktual</TableHead>
-                        <TableHead className="text-right">Selisih</TableHead>
+                        <TableHead>Prioritas</TableHead>
+                        <TableHead>Terdeteksi</TableHead>
+                        <TableHead>Channel & No. Order</TableHead>
+                        <TableHead>Jenis Anomali</TableHead>
+                        <TableHead className="text-right">Qty Nyangkut</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {anomalies.map((anom, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell>{formatDate(anom.date)}</TableCell>
-                          <TableCell className="font-mono text-xs">{anom.product_id}</TableCell>
-                          <TableCell className="text-right">{anom.expected_qty}</TableCell>
-                          <TableCell className="text-right">{anom.actual_qty}</TableCell>
+                      {anomalies.map((anom) => (
+                        <TableRow key={anom.anomaly_id}>
+                          <TableCell>
+                            <Badge
+                              variant={anom.priority_level === 'HIGH' ? 'destructive' : 'outline'}
+                              className={anom.priority_level === 'MEDIUM' ? 'border-amber-500 text-amber-600' : ''}
+                            >
+                              {anom.priority_level}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{formatDate(anom.detected_at)}</TableCell>
+                          <TableCell className="text-xs">
+                            {anom.channel ? `${anom.channel} · ${anom.external_order_id}` : '—'}
+                          </TableCell>
+                          <TableCell className="text-xs">{anom.label}</TableCell>
                           <TableCell className="text-right font-medium text-destructive">
-                            {anom.variance}
+                            {anom.leaked_qty}
                           </TableCell>
                         </TableRow>
                       ))}
@@ -222,6 +461,102 @@ export default function LedgerPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={!!correctionState} onOpenChange={(open) => !open && setCorrectionState(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Koreksi Entri Ledger</DialogTitle>
+          </DialogHeader>
+          {correctionState && (
+            <form onSubmit={handleCorrectionSubmit} className="space-y-4 mt-4">
+              {correctionState.step === 'input' ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Entri Asli</Label>
+                    <div className="text-sm p-3 rounded bg-muted/50 border flex items-center justify-between">
+                      <div className="space-y-1">
+                        <Badge variant="outline" className="text-[10px] uppercase tracking-wider">{correctionState.entry.movement_type.replace(/_/g, " ")}</Badge>
+                        <p className="text-muted-foreground text-xs">{formatDate(correctionState.entry.created_at)}</p>
+                      </div>
+                      <div className="text-right">
+                        {formatQty(correctionState.entry.qty_delta)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="qtyDelta">Jumlah Selisih (Koreksi)</Label>
+                    <Input
+                      id="qtyDelta"
+                      type="number"
+                      required
+                      placeholder="Misal: -2 atau 5"
+                      value={correctionState.qtyDelta}
+                      onChange={(e) => setCorrectionState({...correctionState, qtyDelta: e.target.value})}
+                    />
+                    <p className="text-xs text-muted-foreground">Input angka negatif untuk mengurangi stok, positif untuk menambah stok.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="note">Alasan Koreksi</Label>
+                    <Input
+                      id="note"
+                      type="text"
+                      required
+                      placeholder="Wajib diisi..."
+                      value={correctionState.note}
+                      onChange={(e) => setCorrectionState({...correctionState, note: e.target.value})}
+                    />
+                  </div>
+                  <Button type="submit" className="w-full">
+                    Lanjut Konfirmasi
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="rounded-md bg-muted p-4 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Produk:</span>
+                      <span className="font-medium text-right">{correctionState.product.sku} - {correctionState.product.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Entri Asli:</span>
+                      <span className="font-medium text-right">{correctionState.entry.qty_delta} pcs ({correctionState.entry.movement_type.replace(/_/g, " ")})</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Jumlah Koreksi (Selisih):</span>
+                      <span className="font-medium text-right text-primary">{correctionState.qtyDelta} pcs</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Alasan:</span>
+                      <span className="font-medium text-right">{correctionState.note}</span>
+                    </div>
+                    <div className="border-t pt-2 mt-2">
+                      <div className="flex justify-between font-medium">
+                        <span>Dampak Stok pada Batch Ini:</span>
+                        <span>{calculateBatchStock(correctionState.entry.batch_id)} → {calculateBatchStock(correctionState.entry.batch_id) + parseInt(correctionState.qtyDelta, 10)}</span>
+                      </div>
+                      {(calculateBatchStock(correctionState.entry.batch_id) + parseInt(correctionState.qtyDelta, 10)) <= 15 && (
+                        <div className="flex items-center gap-2 text-amber-500 text-xs mt-2 p-2 bg-amber-500/10 rounded">
+                          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                          <span>Peringatan: stok batch ini akan menjadi rendah ({(calculateBatchStock(correctionState.entry.batch_id) + parseInt(correctionState.qtyDelta, 10))} pcs) setelah aksi ini.</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button type="button" variant="outline" onClick={() => setCorrectionState({...correctionState, step: 'input'})} disabled={isCorrecting}>
+                      Kembali
+                    </Button>
+                    <Button type="submit" disabled={isCorrecting}>
+                      {isCorrecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      Ya, Simpan Koreksi
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,32 +1,22 @@
 import { z } from "zod";
 
-export const createProductSchema = z.object({
-  sku: z.string().min(1, "SKU wajib diisi"),
-  name: z.string().min(1, "Nama produk wajib diisi"),
-  is_bundle: z.boolean().default(false),
-});
-
-export const batchIntakeSchema = z.object({
-  product_id: z.string().uuid("product_id harus UUID valid"),
-  batch_code: z.string().min(1, "Kode batch wajib diisi"),
-  expiry_date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal harus YYYY-MM-DD"),
-  qty: z.number().int().positive("Qty harus lebih dari 0"),
-});
-
-export const bundleRecipeSchema = z
-  .array(
-    z.object({
-      component_product_id: z.string().uuid(),
-      qty_per_bundle: z.number().int().positive("Qty per bundle harus lebih dari 0"),
-    })
-  )
-  .min(1, "Bundle harus punya minimal 1 komponen");
-
 export const manualOutSchema = z.object({
-  product_id: z.string().uuid("product_id harus UUID valid"),
+  product_id: z.string().uuid(),
   qty: z.number().int().positive("Qty harus lebih dari 0"),
-  movement_type: z.string().min(1, "Movement type wajib diisi"),
-  reason: z.string().min(1, "Alasan wajib diisi"),
+  reason: z.enum(["offline", "bonus", "promo", "sample", "damaged", "expired"]),
+  note: z.string().min(1, "Catatan wajib diisi untuk keluar manual"),
+  campaign_reference: z.string().optional(),
+}).refine((data) => {
+  if (["bonus", "promo", "sample"].includes(data.reason)) {
+    return !!data.campaign_reference && data.campaign_reference.trim().length > 0;
+  }
+  return true;
+}, {
+  message: "Referensi campaign/approval wajib diisi untuk reason bonus, promo, atau sample",
+  path: ["campaign_reference"],
+});
+
+export const correctLedgerSchema = z.object({
+  qty_delta: z.number().int().refine((v) => v !== 0, "Selisih koreksi tidak boleh 0"),
+  note: z.string().min(1, "Catatan alasan wajib diisi untuk koreksi entri"),
 });

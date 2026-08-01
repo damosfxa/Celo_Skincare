@@ -19,10 +19,11 @@ function parseCsv(text: string) {
   const headers = lines[0].split(",").map((h) => h.trim());
   return lines.slice(1).map((line) => {
     const values = line.split(",").map((v) => v.trim());
-    return Object.fromEntries(headers.map((h, i) => [h, values[i]])) as Record<
-      string,
-      string
-    >;
+    const row: Record<string, string> = {};
+    headers.forEach((h, i) => {
+      row[h] = values[i];
+    });
+    return row;
   });
 }
 
@@ -60,6 +61,7 @@ export async function POST(request: Request) {
   }
 
   const created: string[] = [];
+  const skipped: { external_order_id: string }[] = [];
   const errors: { external_order_id: string; message: string }[] = [];
 
   for (const [externalOrderId, orderRows] of grouped) {
@@ -84,7 +86,15 @@ export async function POST(request: Request) {
         orderedAt: first.ordered_at,
         items,
       });
-      created.push(order.id);
+
+      // Idempotency: kalau order ini udah pernah diimpor sebelumnya (external_order_id
+      // sama), jangan hitung sebagai "baru" -- catat sebagai skipped biar user tau
+      // itu bukan duplikat data, cuma diam-diam gak diproses ulang.
+      if (order.already_exists) {
+        skipped.push({ external_order_id: externalOrderId });
+      } else {
+        created.push(order.id);
+      }
     } catch (error) {
       errors.push({
         external_order_id: externalOrderId,
@@ -93,5 +103,8 @@ export async function POST(request: Request) {
     }
   }
 
-  return ok({ created: created.length, order_ids: created, failed: errors }, 201);
+  return ok(
+    { created: created.length, order_ids: created, skipped, failed: errors },
+    201
+  );
 }

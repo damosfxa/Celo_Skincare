@@ -40,11 +40,25 @@ export async function simulateCancelOrder(orderId: string) {
   return json.data;
 }
 
-export async function simulateReturnOrder(orderId: string) {
+export type OrderItem = {
+  id: string;
+  product_id: string;
+  qty: number;
+  products: { sku: string; name: string };
+};
+
+export async function getOrderItems(orderId: string) {
+  const res = await fetch(`/api/orders/${orderId}/items`);
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error?.message || 'Gagal mengambil daftar item order');
+  return json.data.items as OrderItem[];
+}
+
+export async function simulateReturnOrder(orderId: string, orderItemId?: string, qty?: number) {
   const res = await fetch('/api/orders/simulate/return', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ order_id: orderId }),
+    body: JSON.stringify({ order_id: orderId, order_item_id: orderItemId, qty }),
   });
   const json = await res.json();
   if (!json.success) throw new Error(json.error?.message || 'Gagal mengajukan retur order');

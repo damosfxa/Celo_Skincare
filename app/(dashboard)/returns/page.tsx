@@ -34,12 +34,12 @@ const inspectSchema = z.object({
   expiry_date: z.string().optional(),
   type: z.string().optional(),
 }).refine((data) => {
-  if (data.type === "RETURN" && (data.condition === "DAMAGED" || data.condition === "LOST") && !data.photo_url) {
+  if ((data.condition === "DAMAGED" || data.condition === "LOST") && !data.photo_url) {
     return false;
   }
   return true;
 }, {
-  message: "URL Foto wajib diisi untuk kondisi Rusak/Hilang pada retur",
+  message: "URL Foto wajib diisi untuk kondisi Rusak/Hilang",
   path: ["photo_url"],
 }).refine((data) => {
   if (data.condition === "SELLABLE" && !data.expiry_date) {

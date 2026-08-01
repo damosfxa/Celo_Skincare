@@ -16,8 +16,9 @@ export async function POST(request: Request) {
   const { error } = await supabase.rpc("fn_manual_out", {
     p_product_id: parsed.data.product_id,
     p_qty: parsed.data.qty,
-    p_movement_type: parsed.data.movement_type,
     p_reason: parsed.data.reason,
+    p_note: parsed.data.note,
+    p_campaign_reference: parsed.data.campaign_reference ?? null,
     p_created_by: userData.user.id,
   });
 
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
 
   return ok({
     product_id: parsed.data.product_id,
-    movement_type: parsed.data.movement_type,
+    reason: parsed.data.reason,
     qty: parsed.data.qty,
   });
 }

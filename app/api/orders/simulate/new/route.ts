@@ -23,10 +23,32 @@ export async function POST(request: Request) {
     );
   }
 
+  // Bundle tanpa resep aktif gak bisa dipecah jadi item satuan -- keluarkan
+  // dari kandidat pemilihan random, biar simulator gak bikin order kosong
+  // (0 item) yang nyangkut PENDING selamanya.
+  let eligibleProducts = products;
+  if (products.some((p) => p.is_bundle)) {
+    const { data: activeRecipes, error: recipeError } = await supabase
+      .from("bundle_recipes")
+      .select("bundle_product_id")
+      .eq("is_active", true);
+    if (recipeError) return handleError(recipeError);
+    const bundlesWithRecipe = new Set((activeRecipes ?? []).map((r) => r.bundle_product_id));
+    eligibleProducts = products.filter((p) => !p.is_bundle || bundlesWithRecipe.has(p.id));
+  }
+
+  if (eligibleProducts.length === 0) {
+    return fail(
+      "NO_PRODUCTS",
+      "Belum ada produk yang bisa disimulasikan (bundle butuh resep aktif dulu). Buat produk/resep dulu sebelum simulasi order.",
+      409
+    );
+  }
+
   try {
     const orderIds: string[] = [];
     for (let i = 0; i < parsed.data.count; i++) {
-      const product = products[Math.floor(Math.random() * products.length)];
+      const product = eligibleProducts[Math.floor(Math.random() * eligibleProducts.length)];
       const qty = Math.floor(Math.random() * 3) + 1;
       const items = await resolveItemsForProduct(
         supabase,

@@ -13,7 +13,7 @@ export async function GET(request: Request) {
   let query = supabase
     .from("stock_ledger")
     .select(
-      "id, batch_id, movement_type, qty_delta, channel, reference_type, reference_id, reason, created_by, created_at, product_batches(product_id)"
+      "id, batch_id, movement_type, qty_delta, channel, reference_type, reference_id, reason, note, campaign_reference, created_by, created_at, product_batches(product_id)"
     )
     .order("created_at", { ascending: false });
 
@@ -25,8 +25,6 @@ export async function GET(request: Request) {
   const { data, error } = await query;
   if (error) return handleError(error);
 
-  // Filter product_id di sini karena relasi product_batches -> product_id
-  // butuh join yang lebih rumit lewat query builder Supabase untuk di-filter di server.
   const filtered = productId
     ? (data ?? []).filter(
         (row: any) => row.product_batches?.product_id === productId

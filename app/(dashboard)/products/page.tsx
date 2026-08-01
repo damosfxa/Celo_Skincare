@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useProducts } from "@/hooks/useProducts";
 import { CreateProductForm } from "@/components/products/create-product-form";
 import { IntakeBatchForm } from "@/components/products/intake-batch-form";
+import { OpeningBalanceForm } from "@/components/products/opening-balance-form";
 import {
   Table,
   TableBody,
@@ -31,6 +32,7 @@ export default function ProductsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <OpeningBalanceForm />
           <IntakeBatchForm />
           <CreateProductForm />
         </div>

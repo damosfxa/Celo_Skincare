@@ -59,3 +59,25 @@ export function useTiktokClaims() {
     mutate,
   };
 }
+
+export type UnverifiedOpeningBalance = {
+  ledger_id: string;
+  batch_id: string;
+  batch_code: string;
+  product_id: string;
+  sku: string;
+  name: string;
+  qty_delta: number;
+  created_at: string;
+};
+
+export function useUnverifiedOpeningBalances() {
+  const { data, error, isLoading, mutate } = useSWR<UnverifiedOpeningBalance[]>('/api/notifications/unverified-opening-balances', fetcher);
+
+  return {
+    unverified: data || [],
+    isLoading,
+    isError: error,
+    mutate,
+  };
+}

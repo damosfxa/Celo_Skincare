@@ -16,6 +16,7 @@ export type ReturnItem = {
   id: string;
   order_id: string;
   channel: string;
+  type?: 'RETURN' | 'CANCELLATION';
   condition?: 'PENDING_INSPECTION' | 'SELLABLE' | 'DAMAGED' | 'LOST';
   created_at: string;
   claim_deadline?: string;

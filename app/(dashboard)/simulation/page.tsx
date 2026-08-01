@@ -6,7 +6,9 @@ import {
   simulateNewOrders, 
   simulateShipOrder, 
   simulateCancelOrder, 
-  simulateReturnOrder 
+  simulateReturnOrder,
+  getOrderItems,
+  OrderItem
 } from "@/hooks/useOrders";
 import { useProducts } from "@/hooks/useProducts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,14 +16,22 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Plus, PackageOpen, X, RotateCcw, Box, Upload } from "lucide-react";
+import { Loader2, Plus, PackageOpen, X, RotateCcw, Box, Upload, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function SimulationPage() {
   const [orders, setOrders] = useState<SimulatedOrder[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingAction, setLoadingAction] = useState<string | null>(null); // orderId-action
+  const [returnItemDialogState, setReturnItemDialogState] = useState<{ isOpen: boolean; orderId: string; items: OrderItem[]; selectedItemId: string; qty: string } | null>(null);
+  const [manualOutConfirmState, setManualOutConfirmState] = useState<{ product_id: string; product_sku: string; product_name: string; current_qty: number; qty: string; reason: string; note: string; campaign_reference?: string } | null>(null);
   
   const [channel, setChannel] = useState("shopee");
   const [count, setCount] = useState("1");
@@ -32,9 +42,10 @@ export default function SimulationPage() {
 
   const { products } = useProducts();
   const [manualOutProduct, setManualOutProduct] = useState("");
-  const [manualOutType, setManualOutType] = useState("OUT_SALE_OFFLINE");
+  const [manualOutReason, setManualOutReason] = useState("offline");
   const [manualOutQty, setManualOutQty] = useState("");
-  const [manualOutReason, setManualOutReason] = useState("");
+  const [manualOutNote, setManualOutNote] = useState("");
+  const [manualOutCampaignRef, setManualOutCampaignRef] = useState("");
   const [isManualOutLoading, setIsManualOutLoading] = useState(false);
 
   const handleGenerate = async (e: React.FormEvent) => {
@@ -84,7 +95,6 @@ export default function SimulationPage() {
     } finally {
       setIsImporting(false);
       setCsvFile(null);
-      // Reset input file visual
       const fileInput = document.getElementById('csv_file') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
     }
@@ -108,9 +118,22 @@ export default function SimulationPage() {
         
         setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'CANCELLED' } : o));
       } else if (action === 'return') {
-        await simulateReturnOrder(orderId);
-        toast.success(`Retur diajukan untuk pesanan ${orderId}.`);
-        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'RETURNED' } : o));
+        const items = await getOrderItems(orderId);
+        if (items.length === 1) {
+          await simulateReturnOrder(orderId);
+          toast.success(`Retur diajukan untuk pesanan ${orderId}.`);
+          setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'RETURNED' } : o));
+        } else if (items.length > 1) {
+          setReturnItemDialogState({
+            isOpen: true,
+            orderId,
+            items,
+            selectedItemId: items[0].id,
+            qty: items[0].qty.toString()
+          });
+        } else {
+          throw new Error("Order tidak memiliki item");
+        }
       }
     } catch (error: any) {
       toast.error(error.message);
@@ -119,9 +142,32 @@ export default function SimulationPage() {
     }
   };
 
-  const handleManualOut = async (e: React.FormEvent) => {
+  const handleManualOutSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!manualOutProduct || !manualOutQty || !manualOutReason) return;
+    if (!manualOutProduct || !manualOutQty || !manualOutNote) return;
+    
+    if (["bonus", "promo", "sample"].includes(manualOutReason) && !manualOutCampaignRef) {
+      toast.error("Referensi Campaign / Approval wajib diisi untuk alasan ini.");
+      return;
+    }
+    
+    const product = products.find(p => p.id === manualOutProduct);
+    if (!product) return;
+    
+    setManualOutConfirmState({
+      product_id: manualOutProduct,
+      product_sku: product.sku,
+      product_name: product.name,
+      current_qty: product.current_qty,
+      qty: manualOutQty,
+      reason: manualOutReason,
+      note: manualOutNote,
+      campaign_reference: ["bonus", "promo", "sample"].includes(manualOutReason) ? manualOutCampaignRef : undefined,
+    });
+  };
+
+  const executeManualOut = async () => {
+    if (!manualOutConfirmState) return;
     
     setIsManualOutLoading(true);
     try {
@@ -129,10 +175,11 @@ export default function SimulationPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          product_id: manualOutProduct,
-          qty: parseInt(manualOutQty, 10),
-          movement_type: manualOutType,
-          reason: manualOutReason,
+          product_id: manualOutConfirmState.product_id,
+          qty: parseInt(manualOutConfirmState.qty, 10),
+          reason: manualOutConfirmState.reason,
+          note: manualOutConfirmState.note,
+          campaign_reference: manualOutConfirmState.campaign_reference,
         }),
       });
       const json = await res.json();
@@ -145,27 +192,44 @@ export default function SimulationPage() {
       }
       
       const payload = json.data;
-      // Get the type label for the toast
-      const typeLabels: Record<string, string> = {
-        "OUT_SALE_OFFLINE": "Penjualan Offline",
-        "OUT_BONUS": "Bonus",
-        "OUT_PROMO": "Promo",
-        "OUT_SAMPLE": "Sample",
-        "OUT_DAMAGED": "Barang Rusak",
-        "OUT_EXPIRED": "Barang Kedaluwarsa",
+      const reasonLabels: Record<string, string> = {
+        offline: "Penjualan Offline",
+        bonus: "Bonus",
+        promo: "Promo",
+        sample: "Sample",
+        damaged: "Barang Rusak",
+        expired: "Barang Kedaluwarsa",
       };
-      const label = typeLabels[payload.movement_type] || payload.movement_type;
+      const label = reasonLabels[payload.reason] || payload.reason;
       
       toast.success(`${payload.qty} pcs berhasil dicatat sebagai ${label}`);
       
-      // Reset form
       setManualOutProduct("");
       setManualOutQty("");
-      setManualOutReason("");
+      setManualOutNote("");
+      setManualOutCampaignRef("");
+      setManualOutConfirmState(null);
     } catch (error: any) {
       toast.error(error.message);
     } finally {
       setIsManualOutLoading(false);
+    }
+  };
+
+  const handleDialogSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!returnItemDialogState) return;
+    const { orderId, selectedItemId, qty } = returnItemDialogState;
+    setLoadingAction(`${orderId}-return`);
+    try {
+      await simulateReturnOrder(orderId, selectedItemId, parseInt(qty, 10));
+      toast.success(`Retur diajukan untuk pesanan ${orderId} (Item Spesifik).`);
+      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'RETURNED' } : o));
+      setReturnItemDialogState(null);
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setLoadingAction(null);
     }
   };
 
@@ -200,7 +264,6 @@ export default function SimulationPage() {
               >
                 <option value="shopee" className="bg-background">Shopee</option>
                 <option value="tiktok" className="bg-background">TikTok Shop</option>
-                <option value="offline" className="bg-background">Offline Store</option>
               </select>
             </div>
             
@@ -235,7 +298,7 @@ export default function SimulationPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleManualOut} className="space-y-4">
+          <form onSubmit={handleManualOutSubmit} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="manualOutProduct">Pilih Produk</Label>
@@ -257,22 +320,38 @@ export default function SimulationPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="manualOutType">Tipe Mutasi</Label>
+                <Label htmlFor="manualOutReason">Tipe Mutasi</Label>
                 <select
-                  id="manualOutType"
-                  value={manualOutType}
-                  onChange={(e) => setManualOutType(e.target.value)}
+                  id="manualOutReason"
+                  value={manualOutReason}
+                  onChange={(e) => setManualOutReason(e.target.value)}
                   disabled={isManualOutLoading}
                   className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <option value="OUT_SALE_OFFLINE">Penjualan Offline</option>
-                  <option value="OUT_BONUS">Bonus</option>
-                  <option value="OUT_PROMO">Promo</option>
-                  <option value="OUT_SAMPLE">Sample</option>
-                  <option value="OUT_DAMAGED">Barang Rusak</option>
-                  <option value="OUT_EXPIRED">Barang Kedaluwarsa</option>
+                  <option value="offline">Penjualan Offline</option>
+                  <option value="bonus">Bonus</option>
+                  <option value="promo">Promo</option>
+                  <option value="sample">Sample</option>
+                  <option value="damaged">Barang Rusak</option>
+                  <option value="expired">Barang Kedaluwarsa</option>
                 </select>
               </div>
+
+              {["bonus", "promo", "sample"].includes(manualOutReason) && (
+                <div className="space-y-2">
+                  <Label htmlFor="manualOutCampaignRef">Referensi Campaign / Approval</Label>
+                  <Input
+                    id="manualOutCampaignRef"
+                    type="text"
+                    required={["bonus", "promo", "sample"].includes(manualOutReason)}
+                    placeholder="Nama campaign atau catatan approval..."
+                    value={manualOutCampaignRef}
+                    onChange={(e) => setManualOutCampaignRef(e.target.value)}
+                    disabled={isManualOutLoading}
+                    className="bg-background"
+                  />
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="manualOutQty">Kuantitas</Label>
@@ -289,14 +368,14 @@ export default function SimulationPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="manualOutReason">Alasan / Catatan</Label>
+                <Label htmlFor="manualOutNote">Alasan / Catatan</Label>
                 <Input
-                  id="manualOutReason"
+                  id="manualOutNote"
                   type="text"
                   required
                   placeholder="Wajib diisi..."
-                  value={manualOutReason}
-                  onChange={(e) => setManualOutReason(e.target.value)}
+                  value={manualOutNote}
+                  onChange={(e) => setManualOutNote(e.target.value)}
                   disabled={isManualOutLoading}
                   className="bg-background"
                 />
@@ -456,6 +535,111 @@ export default function SimulationPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!returnItemDialogState?.isOpen} onOpenChange={(open) => !open && setReturnItemDialogState(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Pilih Item untuk Diretur</DialogTitle>
+          </DialogHeader>
+          {returnItemDialogState && (
+            <form onSubmit={handleDialogSubmit} className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <Label>Pilih Item Komponen</Label>
+                <div className="space-y-2">
+                  {returnItemDialogState.items.map((item) => (
+                    <div key={item.id} className="flex items-center space-x-2">
+                      <input 
+                        type="radio" 
+                        id={item.id} 
+                        name="return_item"
+                        value={item.id}
+                        checked={returnItemDialogState.selectedItemId === item.id}
+                        onChange={(e) => {
+                          const selected = returnItemDialogState.items.find(i => i.id === e.target.value);
+                          setReturnItemDialogState(prev => prev ? {...prev, selectedItemId: e.target.value, qty: selected?.qty.toString() || '1'} : null)
+                        }}
+                        className="text-primary focus:ring-primary h-4 w-4"
+                      />
+                      <Label htmlFor={item.id} className="cursor-pointer font-normal">
+                        {item.products.name} ({item.products.sku}) - Max: {item.qty}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="returnQty">Kuantitas Diretur</Label>
+                <Input
+                  id="returnQty"
+                  type="number"
+                  min="1"
+                  max={returnItemDialogState.items.find(i => i.id === returnItemDialogState.selectedItemId)?.qty || 1}
+                  required
+                  value={returnItemDialogState.qty}
+                  onChange={(e) => setReturnItemDialogState(prev => prev ? {...prev, qty: e.target.value} : null)}
+                />
+              </div>
+              <Button type="submit" className="w-full" disabled={loadingAction !== null}>
+                {loadingAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Ajukan Retur
+              </Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!manualOutConfirmState} onOpenChange={(open) => !open && setManualOutConfirmState(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Konfirmasi Mutasi Manual</DialogTitle>
+          </DialogHeader>
+          {manualOutConfirmState && (
+            <div className="space-y-4 mt-4">
+              <div className="rounded-md bg-muted p-4 space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Produk:</span>
+                  <span className="font-medium text-right">{manualOutConfirmState.product_sku} - {manualOutConfirmState.product_name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Kuantitas:</span>
+                  <span className="font-medium text-destructive">Keluar {manualOutConfirmState.qty} pcs</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Alasan/Catatan:</span>
+                  <span className="font-medium capitalize text-right">{manualOutConfirmState.reason} - {manualOutConfirmState.note}</span>
+                </div>
+                {manualOutConfirmState.campaign_reference && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Referensi Campaign:</span>
+                    <span className="font-medium text-right">{manualOutConfirmState.campaign_reference}</span>
+                  </div>
+                )}
+                <div className="border-t pt-2 mt-2">
+                  <div className="flex justify-between font-medium">
+                    <span>Dampak Stok:</span>
+                    <span>{manualOutConfirmState.current_qty} → {manualOutConfirmState.current_qty - parseInt(manualOutConfirmState.qty, 10)}</span>
+                  </div>
+                  {(manualOutConfirmState.current_qty - parseInt(manualOutConfirmState.qty, 10)) <= 15 && (
+                    <div className="flex items-center gap-2 text-amber-500 text-xs mt-2 p-2 bg-amber-500/10 rounded">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                      <span>Peringatan: stok produk ini akan menjadi rendah ({(manualOutConfirmState.current_qty - parseInt(manualOutConfirmState.qty, 10))} pcs) setelah aksi ini.</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button type="button" variant="outline" onClick={() => setManualOutConfirmState(null)} disabled={isManualOutLoading}>
+                  Batal
+                </Button>
+                <Button type="button" onClick={executeManualOut} disabled={isManualOutLoading}>
+                  {isManualOutLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Ya, Catat Pengeluaran
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

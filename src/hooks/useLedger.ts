@@ -13,11 +13,15 @@ const fetcher = async (url: string) => {
 };
 
 export type LedgerEntry = {
+  id: string;
   batch_id: string;
   movement_type: string;
   qty_delta: number;
   reference_type?: string;
   reference_id?: string;
+  reason?: string;
+  note?: string;
+  channel?: string;
   created_at: string;
 };
 
@@ -41,8 +45,21 @@ export function useReconciliationDrilldown(productId?: string) {
   };
 }
 
+export type DailyAnomaly = {
+  anomaly_id: string;
+  order_id: string;
+  anomaly_type: string;
+  label: string;
+  channel: string;
+  external_order_id: string;
+  detected_at: string;
+  affected_product_ids: string[];
+  leaked_qty: number;
+  priority_level: 'HIGH' | 'MEDIUM' | 'LOW';
+};
+
 export function useDailyAnomalies() {
-  const { data, error, isLoading, mutate } = useSWR<any[]>('/api/reconciliation/daily', fetcher);
+  const { data, error, isLoading, mutate } = useSWR<DailyAnomaly[]>('/api/reconciliation/daily', fetcher);
 
   return {
     anomalies: data || [],
@@ -50,4 +67,15 @@ export function useDailyAnomalies() {
     isError: error,
     mutate,
   };
+}
+
+export async function correctLedgerEntry(id: string, qtyDelta: number, note: string) {
+  const res = await fetch(`/api/ledger/${id}/correct`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ qty_delta: qtyDelta, note }),
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error?.message || 'Gagal menyimpan koreksi ledger');
+  return json.data;
 }

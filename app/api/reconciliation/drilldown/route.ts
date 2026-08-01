@@ -1,9 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { ok, fail, handleError } from "@/lib/api-response";
 
-// Inti dari "selisih bisa ditelusuri" -- kembalikan seluruh riwayat ledger
-// satu produk, urut waktu, biar kelihatan persis pergerakan apa aja yang
-// membentuk angka stok saat ini.
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const productId = searchParams.get("product_id");
@@ -22,7 +19,7 @@ export async function GET(request: Request) {
   const { data: ledger, error: ledgerError } = await supabase
     .from("stock_ledger")
     .select(
-      "batch_id, movement_type, qty_delta, reference_type, reference_id, reason, created_at"
+      "id, batch_id, movement_type, qty_delta, channel, reference_type, reference_id, reason, note, campaign_reference, created_at"
     )
     .in("batch_id", batchIds.length ? batchIds : ["00000000-0000-0000-0000-000000000000"])
     .order("created_at", { ascending: true });

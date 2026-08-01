@@ -72,11 +72,14 @@ export async function createOpnameSession() {
 }
 
 // Submit scanned item
-export async function submitOpnameItem(sessionId: string, batchId: string, physicalQty: number) {
+export async function submitOpnameItem(sessionId: string, batchId: string, physicalQty: number, discrepancyReason?: string) {
   const res = await fetch(`/api/opname/sessions/${sessionId}/items/${batchId}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ physical_qty: physicalQty }),
+    body: JSON.stringify({ 
+      physical_qty: physicalQty,
+      discrepancy_reason: discrepancyReason 
+    }),
   });
   const json = await res.json();
   if (!json.success) throw new Error(json.error?.message || 'Gagal menyimpan item opname');

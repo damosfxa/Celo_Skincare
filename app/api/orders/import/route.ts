@@ -64,7 +64,20 @@ export async function POST(request: Request) {
   const skipped: { external_order_id: string }[] = [];
   const errors: { external_order_id: string; message: string }[] = [];
 
-  for (const [externalOrderId, orderRows] of grouped) {
+  // Diproses per-gelombang (paralel di dalam gelombang, bukan satu-satu
+  // murni) -- CSV "ratusan baris" kalau diproses murni sekuensial bisa
+  // makan puluhan detik (tiap baris = beberapa kali bolak-balik ke DB),
+  // gampang kelewat batas timeout serverless function di production.
+  // Tetap aman: tiap external_order_id unik per grup (gak ada duplikat
+  // di dalam satu gelombang), dan createOrderWithItems masih tangani
+  // race condition antar-gelombang lewat cek 23505 yang sudah ada.
+  const IMPORT_CONCURRENCY = 20;
+  const groupedEntries = Array.from(grouped.entries());
+
+  async function processOrderGroup(
+    externalOrderId: string,
+    orderRows: Record<string, string>[]
+  ) {
     try {
       const first = orderRows[0];
       const items = [];
@@ -101,6 +114,11 @@ export async function POST(request: Request) {
         message: error instanceof Error ? error.message : "Gagal impor",
       });
     }
+  }
+
+  for (let i = 0; i < groupedEntries.length; i += IMPORT_CONCURRENCY) {
+    const batch = groupedEntries.slice(i, i + IMPORT_CONCURRENCY);
+    await Promise.all(batch.map(([externalOrderId, orderRows]) => processOrderGroup(externalOrderId, orderRows)));
   }
 
   return ok(

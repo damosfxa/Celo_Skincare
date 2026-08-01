@@ -313,7 +313,7 @@ export default function SimulationPage() {
                   <option value="" disabled>Pilih Produk</option>
                   {products.filter(p => !p.is_bundle && p.current_qty > 0).map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.sku} - {p.name} (Sisa: {p.current_qty})
+                      {p.sku} - {p.name} (Sisa: {p.current_qty.toLocaleString("id-ID")})
                     </option>
                   ))}
                 </select>
@@ -602,7 +602,7 @@ export default function SimulationPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Kuantitas:</span>
-                  <span className="font-medium text-destructive">Keluar {manualOutConfirmState.qty} pcs</span>
+                  <span className="font-medium text-destructive">Keluar {parseInt(manualOutConfirmState.qty, 10).toLocaleString("id-ID")} pcs</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Alasan/Catatan:</span>
@@ -617,7 +617,7 @@ export default function SimulationPage() {
                 <div className="border-t pt-2 mt-2">
                   <div className="flex justify-between font-medium">
                     <span>Dampak Stok:</span>
-                    <span>{manualOutConfirmState.current_qty} → {manualOutConfirmState.current_qty - parseInt(manualOutConfirmState.qty, 10)}</span>
+                    <span>{manualOutConfirmState.current_qty.toLocaleString("id-ID")} → {(manualOutConfirmState.current_qty - parseInt(manualOutConfirmState.qty, 10)).toLocaleString("id-ID")}</span>
                   </div>
                   {(manualOutConfirmState.current_qty - parseInt(manualOutConfirmState.qty, 10)) <= 15 && (
                     <div className="flex items-center gap-2 text-amber-500 text-xs mt-2 p-2 bg-amber-500/10 rounded">

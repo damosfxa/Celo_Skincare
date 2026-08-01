@@ -111,7 +111,7 @@ export default function NotificationsPage() {
                         <div className="font-mono text-sm">{item.batch_id}</div>
                         <div className="text-xs text-muted-foreground">{item.batch_code}</div>
                       </TableCell>
-                      <TableCell className="text-right font-medium">{item.qty_delta}</TableCell>
+                      <TableCell className="text-right font-medium">{item.qty_delta.toLocaleString("id-ID")}</TableCell>
                       <TableCell>
                         {formatDate(item.created_at)}
                       </TableCell>
@@ -173,7 +173,7 @@ export default function NotificationsPage() {
                       <TableCell className={item.days_remaining <= 30 ? "text-destructive font-medium" : ""}>
                         {formatDate(item.expiry_date)}
                       </TableCell>
-                      <TableCell className="text-right font-medium">{item.current_qty}</TableCell>
+                      <TableCell className="text-right font-medium">{item.current_qty.toLocaleString("id-ID")}</TableCell>
                       <TableCell className="text-right">
                         {getStatusBadge(item.days_remaining)}
                       </TableCell>
@@ -233,7 +233,7 @@ export default function NotificationsPage() {
                         <div className="text-sm text-muted-foreground">{claim.name}</div>
                       </TableCell>
                       <TableCell className="font-mono text-sm">{claim.external_order_id}</TableCell>
-                      <TableCell className="text-right font-medium">{claim.qty}</TableCell>
+                      <TableCell className="text-right font-medium">{claim.qty.toLocaleString("id-ID")}</TableCell>
                       <TableCell>
                         {getConditionBadge(claim.condition)}
                       </TableCell>

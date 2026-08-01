@@ -201,7 +201,7 @@ export default function DashboardPage() {
                         <ArrowDownRight className="h-3 w-3" />
                       )}
                       {m.qty_delta > 0 ? "+" : ""}
-                      {m.qty_delta}
+                      {m.qty_delta.toLocaleString("id-ID")}
                     </div>
                   </div>
                 ))

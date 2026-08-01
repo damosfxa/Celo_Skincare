@@ -75,23 +75,31 @@ export async function GET() {
   const worklist: WorklistItem[] = [];
 
   for (const claim of tiktokClaimsRes.data ?? []) {
+    const claimDaysText =
+      claim.days_remaining < 0
+        ? `sudah lewat batas klaim ${Math.abs(claim.days_remaining)} hari lalu`
+        : `${claim.days_remaining} hari lagi`;
     worklist.push({
       id: `tiktok_claim-${claim.id}`,
       type: "tiktok_claim",
       priority: claimPriority(claim.days_remaining),
-      title: `Klaim TikTok ${claim.external_order_id}, ${claim.days_remaining} hari lagi`,
+      title: `Klaim TikTok ${claim.external_order_id}, ${claimDaysText}`,
       detail: `${claim.condition === "PENDING_INSPECTION" ? "Belum diinspeksi" : claim.condition}, ${claim.name} x${claim.qty}`,
       href: "/returns",
     });
   }
 
   for (const batch of expiringRes.data ?? []) {
+    const expiryDaysText =
+      batch.days_remaining < 0
+        ? `sudah kedaluwarsa ${Math.abs(batch.days_remaining)} hari lalu`
+        : `kedaluwarsa ${batch.days_remaining} hari lagi`;
     worklist.push({
       id: `expiring_batch-${batch.batch_id}`,
       type: "expiring_batch",
       priority: expiryPriority(batch.days_remaining),
-      title: `${batch.name}, batch ${batch.batch_code} kedaluwarsa ${batch.days_remaining} hari lagi`,
-      detail: `Sisa ${batch.current_qty} unit`,
+      title: `${batch.name}, batch ${batch.batch_code} ${expiryDaysText}`,
+      detail: `Sisa ${batch.current_qty.toLocaleString("id-ID")} unit`,
       href: "/products",
     });
   }
@@ -102,7 +110,7 @@ export async function GET() {
       type: "anomaly",
       priority: anomaly.priority_level,
       title: anomaly.label,
-      detail: `${anomaly.anomaly_type}, qty ${anomaly.leaked_qty}`,
+      detail: `${anomaly.anomaly_type}, qty ${anomaly.leaked_qty.toLocaleString("id-ID")}`,
       href: "/ledger?tab=anomalies",
     });
   }
@@ -130,7 +138,7 @@ export async function GET() {
       type: "oversell_risk",
       priority: "HIGH",
       title: `Resiko oversell: ${risk.name}`,
-      detail: `${risk.reserved_qty} unit dipesan, cuma ${risk.available_qty} unit tersedia (kurang ${risk.shortfall})`,
+      detail: `${risk.reserved_qty.toLocaleString("id-ID")} unit dipesan, cuma ${risk.available_qty.toLocaleString("id-ID")} unit tersedia (kurang ${risk.shortfall.toLocaleString("id-ID")})`,
       href: "/products",
     });
   }

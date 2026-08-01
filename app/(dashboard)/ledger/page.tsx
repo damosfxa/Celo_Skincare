@@ -519,11 +519,11 @@ export default function LedgerPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Entri Asli:</span>
-                      <span className="font-medium text-right">{correctionState.entry.qty_delta} pcs ({correctionState.entry.movement_type.replace(/_/g, " ")})</span>
+                      <span className="font-medium text-right">{correctionState.entry.qty_delta.toLocaleString("id-ID")} pcs ({correctionState.entry.movement_type.replace(/_/g, " ")})</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Jumlah Koreksi (Selisih):</span>
-                      <span className="font-medium text-right text-primary">{correctionState.qtyDelta} pcs</span>
+                      <span className="font-medium text-right text-primary">{parseInt(correctionState.qtyDelta, 10).toLocaleString("id-ID")} pcs</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Alasan:</span>
@@ -532,7 +532,7 @@ export default function LedgerPage() {
                     <div className="border-t pt-2 mt-2">
                       <div className="flex justify-between font-medium">
                         <span>Dampak Stok pada Batch Ini:</span>
-                        <span>{calculateBatchStock(correctionState.entry.batch_id)} → {calculateBatchStock(correctionState.entry.batch_id) + parseInt(correctionState.qtyDelta, 10)}</span>
+                        <span>{calculateBatchStock(correctionState.entry.batch_id).toLocaleString("id-ID")} → {(calculateBatchStock(correctionState.entry.batch_id) + parseInt(correctionState.qtyDelta, 10)).toLocaleString("id-ID")}</span>
                       </div>
                       {(calculateBatchStock(correctionState.entry.batch_id) + parseInt(correctionState.qtyDelta, 10)) <= 15 && (
                         <div className="flex items-center gap-2 text-amber-500 text-xs mt-2 p-2 bg-amber-500/10 rounded">

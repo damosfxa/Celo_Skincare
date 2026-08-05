@@ -143,24 +143,57 @@ Semuanya tertandai jelas sebagai data tes dan tidak mengganggu. Kalau mau dirapi
 
 ---
 
-## TASK D, `npm run lint` gagal
+## TASK D, `npm run lint` gagal, SELESAI
 
-**Prioritas: SEDANG.** **Ditemukan: 2026-08-05**, saat audit ulang khusus soal stack/bahasa pemrograman.
+**Ditemukan: 2026-08-05**, saat audit ulang khusus soal stack/bahasa pemrograman. **Selesai: 2026-08-05.**
 
-### Status per 2026-08-05: bagian Claude SELESAI, sisa bagian Gemini
+### Status akhir
 
-| | Sebelum | Sesudah bagian Claude | Sisa |
-|---|---|---|---|
-| Total masalah | 105 | 46 | milik Gemini |
-| Error | 84 | 27 | milik Gemini |
-| Warning | 21 | 19 | milik Gemini |
+| | Awal | Akhir |
+|---|---|---|
+| Error | 84 | **0** |
+| Warning | 21 | 6 (semuanya jenis yang sengaja dibiarkan) |
 
-**Sudah nol error/warning di seluruh wilayah backend + Panduan + tes:**
-`app/api/**`, `src/lib/**`, `tests/**`, `app/(dashboard)/panduan/**` (diverifikasi: `npx eslint` pada keempatnya keluar kosong).
+Live di commit `02ee866`. Semua terverifikasi: `npx tsc --noEmit` bersih, `npm run lint` 0 error, `npm run build` berhasil 30/30 halaman, `npm test` 28/28.
 
-Diverifikasi juga tidak ada yang rusak: `npm run build` hijau (TypeScript bersih, 30/30 halaman), `npm test` 28/28 lulus, dijalankan berulang.
+Pembagiannya: Claude mengerjakan backend + halaman Panduan + tes (59 masalah), Gemini mengerjakan frontend (46 masalah).
 
-**Sisa 46 masalah semuanya di wilayah frontend Gemini:** `app/(dashboard)/**` selain panduan, `src/components/**`, `src/hooks/**`. Rinciannya di bagian "Sisa untuk Gemini" di bawah.
+### Sisa 6 warning yang sengaja dibiarkan
+
+- 2 `no-img-element` di `returns/page.tsx` (foto bukti retur dari Supabase Storage, `next/image` butuh konfigurasi domain, tidak sepadan)
+- 2 `incompatible-library` dari `form.watch()` React Hook Form, keterbatasan library
+- 1 `exhaustive-deps` di `products/[id]/page.tsx`
+- 1 `exhaustive-deps` di `camera-scanner.tsx:134`, `stopScanner` tidak dicantumkan di daftar dependensi. **Aman**, karena `stopScanner` dibuat dengan `useCallback(..., [])` sehingga acuannya tidak pernah berubah. Perbaikannya sepele kalau mau dirapikan nanti.
+
+---
+
+## TASK E, bug kamera scanner tidak berhenti, SELESAI
+
+**Ditemukan: 2026-08-05** saat verifikasi hasil Task D. **Selesai & terverifikasi di HP asli: 2026-08-05.**
+
+### Apa yang terjadi
+
+Saat membereskan lint, teardown kamera dipindahkan dari `useEffect([isOpen])` ke event handler `handleOpenChange`. Yang terlewat: ada **dua** jalur penutupan dialog, dan hanya satu yang lewat handler itu.
+
+Jalur sukses scan menutup dialog dengan `setIsOpen(false)` langsung (baris 81). Komponen Dialog tidak memanggil `onOpenChange` untuk perubahan state yang datang dari luar dirinya, itu memang desainnya supaya tidak terjadi loop. Akibatnya `stopScanner` tidak pernah jalan di jalur yang justru paling sering dipakai.
+
+Efeknya di HP asli: kamera tetap menyala setelah dialog tertutup, dan karena scanner tidak berhenti, callback sukses terpanggil berulang setiap frame, sehingga toast "QR Berhasil dipindai!" menumpuk tanpa henti dan kolom Batch ID terus ditimpa.
+
+### Perbaikannya
+
+Satu fungsi `stopScanner` (useCallback) dipakai bersama oleh **ketiga** jalur: sukses scan (baris 76), penutupan manual (baris 154), dan pelepasan komponen (baris 49). Ditambah penjaga `hasScannedRef` yang di-reset tiap kamera dinyalakan dan dikunci secara sinkron di awal callback sukses, supaya toast tetap sekali walau beberapa frame terlanjur terbaca sebelum `stop()` selesai.
+
+### Terverifikasi manual di HP Android (bukan cuma build hijau)
+
+| Yang dicek | Hasil |
+|---|---|
+| Toast "QR Berhasil dipindai!" | Muncul tepat 1 kali |
+| Titik hijau indikator kamera setelah dialog tertutup | Hilang |
+| Buka kamera untuk kedua kalinya | Menyala normal, tanpa error |
+
+### Pelajaran penting
+
+**Keempat perintah otomatis semuanya hijau ketika bug ini aktif di production.** `tsc`, `lint`, `build`, dan 28 tes tidak menangkap apa pun. Untuk apa pun yang menyentuh perangkat keras (kamera), siklus hidup komponen, atau interaksi pengguna, pengujian tangan di perangkat asli tidak tergantikan.
 
 ### Kenapa ini baru ketahuan sekarang
 

@@ -52,7 +52,10 @@ export async function POST(request: Request) {
     .from("products")
     .select("id, sku, is_bundle");
   if (productsError) return handleError(productsError);
-  const productBySku = new Map((products ?? []).map((p: any) => [p.sku, p]));
+  type ProductLookupRow = { id: string; sku: string; is_bundle: boolean };
+  const productBySku = new Map(
+    ((products as ProductLookupRow[]) ?? []).map((p) => [p.sku, p])
+  );
 
   const grouped = new Map<string, Record<string, string>[]>();
   for (const row of rows) {

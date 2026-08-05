@@ -4,7 +4,7 @@ import { useExpiringNotifications, useTiktokClaims, useUnverifiedOpeningBalances
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Bell, AlertTriangle, ShieldCheck, CheckCircle2, Ticket, ClipboardList } from "lucide-react";
+import { Loader2, Bell, ShieldCheck, CheckCircle2, Ticket, ClipboardList } from "lucide-react";
 
 export default function NotificationsPage() {
   const { notifications, isLoading, isError } = useExpiringNotifications();

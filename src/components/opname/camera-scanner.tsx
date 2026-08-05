@@ -11,12 +11,14 @@ interface CameraScannerProps {
   onScan: (decodedText: string) => void;
 }
 
+type ZoomCapability = { min: number; max: number; step: number };
+
 export function CameraScanner({ onScan }: CameraScannerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   
   // State untuk kontrol zoom manual
-  const [zoomCapability, setZoomCapability] = useState<{ min: number; max: number; step: number } | null>(null);
+  const [zoomCapability, setZoomCapability] = useState<ZoomCapability | null>(null);
   const [currentZoom, setCurrentZoom] = useState<number>(1);
   
   const scannerRef = useRef<Html5Qrcode | null>(null);
@@ -32,7 +34,7 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
       if (scannerRef.current && isScanning) {
         try {
           scannerRef.current.stop().catch(() => {});
-        } catch (e) {
+        } catch {
           // ignore sync error
         }
       }
@@ -41,19 +43,6 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
 
   useEffect(() => {
     if (!isOpen) {
-      // Bersihkan state kapabilitas zoom saat dialog ditutup
-      setZoomCapability(null);
-      
-      if (scannerRef.current && isScanning) {
-        try {
-          scannerRef.current.stop().then(() => {
-            setIsScanning(false);
-            scannerRef.current?.clear();
-          }).catch(() => {});
-        } catch (e) {
-          setIsScanning(false);
-        }
-      }
       return;
     }
 
@@ -78,16 +67,16 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
           onScanRef.current(decodedText);
           setIsOpen(false);
         },
-        (errorMessage) => {
+        () => {
           // Parse errors are ignored (it just means it hasn't found a QR yet)
         }
       ).then(() => {
         // Setelah kamera sukses dijalankan, terapkan constraint defensif
         try {
-          const trackCaps = scannerRef.current?.getRunningTrackCapabilities() as any;
+          const trackCaps = scannerRef.current?.getRunningTrackCapabilities() as Record<string, unknown>;
           if (!trackCaps) return;
 
-          const constraints: any = { advanced: [{}] };
+          const constraints: { advanced: Record<string, unknown>[] } = { advanced: [{}] };
           let shouldApply = false;
 
           // 1. Terapkan Auto-focus continuous jika didukung
@@ -97,8 +86,14 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
           }
 
           // 2. Deteksi kapabilitas Zoom
-          if (trackCaps.zoom && typeof trackCaps.zoom.min === 'number') {
-            const { min, max, step } = trackCaps.zoom;
+          const zoom = trackCaps.zoom as Partial<ZoomCapability> | undefined;
+          if (
+            zoom &&
+            typeof zoom.min === "number" &&
+            typeof zoom.max === "number" &&
+            typeof zoom.step === "number"
+          ) {
+            const { min, max, step } = zoom;
             setZoomCapability({ min, max, step });
             
             // Set initial zoom ke 35% dari rentang supaya agak diperbesar
@@ -111,7 +106,7 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
           if (shouldApply) {
             scannerRef.current?.applyVideoConstraints(constraints).catch(() => {});
           }
-        } catch (e) {
+        } catch {
           // Abaikan error (device tidak mendukung advanced constraint)
         }
       }).catch((err) => {
@@ -132,15 +127,32 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
       try {
         scannerRef.current.applyVideoConstraints({
           advanced: [{ zoom: value }]
-        } as any).catch(() => {});
-      } catch (err) {
+        } as unknown as MediaTrackConstraints).catch(() => {});
+      } catch {
         // Abaikan
       }
     }
   };
 
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) {
+      setZoomCapability(null);
+      if (scannerRef.current && isScanning) {
+        try {
+          scannerRef.current.stop().then(() => {
+            setIsScanning(false);
+            scannerRef.current?.clear();
+          }).catch(() => setIsScanning(false));
+        } catch {
+          setIsScanning(false);
+        }
+      }
+    }
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger render={<Button type="button" variant="outline" size="icon" title="Scan via Kamera" className="h-full" />}>
         <Camera className="h-5 w-5" />
       </DialogTrigger>

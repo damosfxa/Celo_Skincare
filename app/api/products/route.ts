@@ -2,6 +2,12 @@ import { createClient } from "@/lib/supabase/server";
 import { ok, fail, handleError } from "@/lib/api-response";
 import { createProductSchema } from "@/lib/validators/product";
 
+// Klien Supabase di project ini sengaja tidak diberi tipe skema hasil-generate,
+// jadi hasil query datang longgar. Bentuk baris yang benar-benar di-select
+// dideklarasikan di sini supaya batas datanya tetap terperiksa TypeScript.
+type ProductRow = { id: string; sku: string; name: string; is_bundle: boolean };
+type ProductStockRow = { product_id: string; current_qty: number };
+
 export async function GET() {
   const supabase = await createClient();
 
@@ -18,9 +24,9 @@ export async function GET() {
   if (stockResult.error) return handleError(stockResult.error);
 
   const stockMap = new Map(
-    (stockResult.data ?? []).map((s: any) => [s.product_id, s.current_qty])
+    (stockResult.data as ProductStockRow[] ?? []).map((s) => [s.product_id, s.current_qty])
   );
-  const result = (productsResult.data ?? []).map((p: any) => ({
+  const result = (productsResult.data as ProductRow[] ?? []).map((p) => ({
     ...p,
     current_qty: stockMap.get(p.id) ?? 0,
   }));

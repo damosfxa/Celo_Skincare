@@ -1,6 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { ok, fail, handleError } from "@/lib/api-response";
 
+// Klien Supabase di project ini sengaja tidak diberi tipe skema hasil-generate,
+// jadi hasil query datang longgar. Bentuk baris yang benar-benar di-select
+// dideklarasikan di sini supaya batas datanya tetap terperiksa TypeScript.
+type BatchRow = { id: string; batch_code: string; expiry_date: string };
+type BatchStockRow = { batch_id: string; current_qty: number };
+type RecipeRow = { component_product_id: string; qty_per_bundle: number };
+type ComponentRow = { id: string; sku: string; name: string };
+
+type RecipeWithComponent = RecipeRow & { component: ComponentRow | null };
+
 // Endpoint yang sebelumnya cuma ada di dokumentasi, belum ada kodenya.
 export async function GET(
   _request: Request,
@@ -25,14 +35,17 @@ export async function GET(
 
   // Saldo per batch dari tabel cache, bukan view v_batch_stock (SUM
   // full-scan seluruh ledger tiap panggil). Lihat 0125.
-  const batchIds = (batches ?? []).map((b: any) => b.id);
+  const batchRows = (batches as BatchRow[]) ?? [];
+  const batchIds = batchRows.map((b) => b.id);
   const { data: stock } = await supabase
     .from("batch_stock_summary")
     .select("batch_id, current_qty")
     .in("batch_id", batchIds.length ? batchIds : ["00000000-0000-0000-0000-000000000000"]);
 
-  const stockMap = new Map((stock ?? []).map((s: any) => [s.batch_id, s.current_qty]));
-  const batchesWithStock = (batches ?? []).map((b: any) => ({
+  const stockMap = new Map(
+    ((stock as BatchStockRow[]) ?? []).map((s) => [s.batch_id, s.current_qty])
+  );
+  const batchesWithStock = batchRows.map((b) => ({
     ...b,
     current_qty: stockMap.get(b.id) ?? 0,
   }));
@@ -40,7 +53,7 @@ export async function GET(
   // Resep bundle -- kalau produk ini bundle, kembalikan resep yang sudah
   // tersimpan (kalau ada) supaya frontend bisa isi form otomatis saat
   // dibuka lagi untuk diedit.
-  let recipe: any[] = [];
+  let recipe: RecipeWithComponent[] = [];
   if (product.is_bundle) {
     const { data: recipeRows, error: recipeError } = await supabase
       .from("bundle_recipes")
@@ -48,14 +61,17 @@ export async function GET(
       .eq("bundle_product_id", id);
     if (recipeError) return handleError(recipeError);
 
-    const componentIds = (recipeRows ?? []).map((r: any) => r.component_product_id);
+    const recipeList = (recipeRows as RecipeRow[]) ?? [];
+    const componentIds = recipeList.map((r) => r.component_product_id);
     const { data: components } = await supabase
       .from("products")
       .select("id, sku, name")
       .in("id", componentIds.length ? componentIds : ["00000000-0000-0000-0000-000000000000"]);
-    const componentMap = new Map((components ?? []).map((c: any) => [c.id, c]));
+    const componentMap = new Map(
+      ((components as ComponentRow[]) ?? []).map((c) => [c.id, c])
+    );
 
-    recipe = (recipeRows ?? []).map((r: any) => ({
+    recipe = recipeList.map((r) => ({
       component_product_id: r.component_product_id,
       qty_per_bundle: r.qty_per_bundle,
       component: componentMap.get(r.component_product_id) ?? null,

@@ -23,8 +23,8 @@ export default function OpnameSessionsPage() {
       toast.success("Sesi opname berhasil dibuka");
       await mutate();
       router.push(`/opname/${newSession.session_id}`);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
       setIsCreating(false);
     }
   };

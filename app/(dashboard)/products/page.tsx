@@ -1,7 +1,5 @@
 "use client";
 
-import { useState } from "react";
-
 import { useProducts } from "@/hooks/useProducts";
 import { CreateProductForm } from "@/components/products/create-product-form";
 import { IntakeBatchForm } from "@/components/products/intake-batch-form";

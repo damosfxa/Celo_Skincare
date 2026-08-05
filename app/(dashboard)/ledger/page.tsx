@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, AlertTriangle, ArrowDownRight, ArrowUpRight, Edit, FileDigit, Download } from "lucide-react";
+import { Loader2, AlertTriangle, ArrowDownRight, ArrowUpRight, Edit, Download } from "lucide-react";
 
 export default function LedgerPage() {
   const searchParams = useSearchParams();
@@ -30,7 +30,7 @@ export default function LedgerPage() {
 
   type CorrectionState = {
     entry: LedgerEntry;
-    product: any;
+    product: { id: string; sku: string; name: string } & Record<string, unknown>;
     step: 'input' | 'confirm';
     qtyDelta: string;
     note: string;
@@ -38,7 +38,7 @@ export default function LedgerPage() {
   const [correctionState, setCorrectionState] = useState<CorrectionState | null>(null);
   const [isCorrecting, setIsCorrecting] = useState(false);
 
-  const { products, isLoading: isLoadingProducts } = useProducts();
+  const { products } = useProducts();
   const { data: drilldownData, isLoading: isLoadingDrilldown, mutate } = useReconciliationDrilldown(
     selectedProductId || undefined
   );
@@ -98,8 +98,8 @@ export default function LedgerPage() {
         toast.success("Koreksi ledger berhasil disimpan.");
         mutate();
         setCorrectionState(null);
-      } catch (error: any) {
-        toast.error(error.message);
+      } catch (error: unknown) {
+        toast.error(error instanceof Error ? error.message : String(error));
       } finally {
         setIsCorrecting(false);
       }

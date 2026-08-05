@@ -97,8 +97,9 @@ export default function ReturnsPage() {
       form.setValue("photo_url", urlData.publicUrl);
       setPhotoPreview(urlData.publicUrl);
       toast.success("Foto berhasil diunggah");
-    } catch (error: any) {
-      toast.error(`Gagal upload foto: ${error.message}`);
+    } catch (error: unknown) {
+      const pesan = error instanceof Error ? error.message : String(error);
+      toast.error(`Gagal upload foto: ${pesan}`);
     } finally {
       setIsUploading(false);
     }
@@ -123,8 +124,8 @@ export default function ReturnsPage() {
       toast.success(`Retur untuk order ${selectedReturn.order_id} berhasil diinspeksi.`);
       mutate();
       setSelectedReturn(null);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setIsSubmitting(false);
     }

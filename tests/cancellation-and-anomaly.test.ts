@@ -78,8 +78,8 @@ describe("Pembatalan setelah shipped & deteksi anomali harian", () => {
   });
 
   it("Batal SETELAH shipped TAPI belum lewat jalur resmi -- HARUS muncul di anomali harian", async () => {
-    const { supabase, userId } = ctx;
-    const { product, order } = await setupShippedOrder(6);
+    const { supabase } = ctx;
+    const { order } = await setupShippedOrder(6);
 
     // Order ditandai CANCELLED langsung (skip proses retur/inspeksi resmi)
     // -- ini persis skenario "selisih gak ketauan asalnya" yang harus

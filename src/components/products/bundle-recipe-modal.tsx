@@ -77,8 +77,9 @@ export function BundleRecipeModal({ productId, isOpen, onClose }: BundleRecipeMo
       await submitBundleRecipe(productId, values.components);
       toast.success("Resep bundle berhasil disimpan");
       onClose();
-    } catch (error: any) {
-      toast.error(error.message || "Gagal menyimpan resep bundle");
+    } catch (error: unknown) {
+      const pesan = error instanceof Error ? error.message : "";
+      toast.error(pesan || "Gagal menyimpan resep bundle");
     }
   };
 

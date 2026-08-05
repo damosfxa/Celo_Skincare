@@ -62,7 +62,8 @@ export async function createOrderWithItems(
     // Race condition: request lain kebetulan bikin order yang sama persis
     // di antara SELECT cek di atas dan INSERT ini. Constraint DB yang nolak --
     // bukan bug, cukup ambil lagi data yang barusan kebuat request lain itu.
-    if ((orderError as any).code === "23505") {
+    // `code` memang properti resmi PostgrestError, jadi gak perlu cast.
+    if (orderError.code === "23505") {
       const { data: raceExisting, error: raceError } = await supabase
         .from("orders")
         .select()
@@ -104,7 +105,8 @@ export async function resolveItemsForProduct(
     .eq("is_active", true);
   if (error) throw error;
 
-  return (recipe ?? []).map((r: any) => ({
+  type RecipeRow = { component_product_id: string; qty_per_bundle: number };
+  return ((recipe as RecipeRow[]) ?? []).map((r) => ({
     product_id: r.component_product_id,
     qty: r.qty_per_bundle * qty,
   }));
@@ -162,7 +164,7 @@ export async function shipOrderItems(
   const { data: allocations } = await supabase
     .from("order_item_batch_allocations")
     .select("order_item_id, batch_id, qty")
-    .in("order_item_id", (items ?? []).map((i: any) => i.id));
+    .in("order_item_id", ((items as { id: string }[]) ?? []).map((i) => i.id));
 
   return { order_id: order.id, status: newStatus, allocations };
 }

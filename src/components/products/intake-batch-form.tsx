@@ -69,8 +69,8 @@ export function IntakeBatchForm() {
       form.reset();
       setOpen(false);
       mutate(); // Refresh tabel produk
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setIsLoading(false);
     }

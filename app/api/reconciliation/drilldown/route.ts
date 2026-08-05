@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     .eq("product_id", productId);
   if (batchError) return handleError(batchError);
 
-  const batchIds = (batches ?? []).map((b: any) => b.id);
+  const batchIds = ((batches as { id: string }[]) ?? []).map((b) => b.id);
 
   const { data: ledger, error: ledgerError } = await supabase
     .from("stock_ledger")

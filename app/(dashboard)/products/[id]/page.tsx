@@ -75,8 +75,8 @@ export default function ProductDetailPage() {
       await submitBundleRecipe(productId, values.components);
       toast.success("Resep bundle berhasil disimpan!");
       mutate();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setIsSubmitting(false);
     }

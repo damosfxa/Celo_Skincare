@@ -38,7 +38,7 @@ export default function SimulationPage() {
 
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
-  const [importResult, setImportResult] = useState<{created: number, failed: any[]} | null>(null);
+  const [importResult, setImportResult] = useState<{created: number, failed: {external_order_id: string, message: string}[]} | null>(null);
 
   const { products } = useProducts();
   const [manualOutProduct, setManualOutProduct] = useState("");
@@ -61,8 +61,8 @@ export default function SimulationPage() {
       }));
       setOrders(prev => [...newOrders, ...prev]);
       toast.success(`${data.created} pesanan berhasil dibuat (PENDING)`);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setIsGenerating(false);
     }
@@ -90,8 +90,8 @@ export default function SimulationPage() {
       } else {
         toast.warning("Tidak ada pesanan yang berhasil diimpor");
       }
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setIsImporting(false);
       setCsvFile(null);
@@ -135,8 +135,8 @@ export default function SimulationPage() {
           throw new Error("Order tidak memiliki item");
         }
       }
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setLoadingAction(null);
     }
@@ -209,8 +209,8 @@ export default function SimulationPage() {
       setManualOutNote("");
       setManualOutCampaignRef("");
       setManualOutConfirmState(null);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setIsManualOutLoading(false);
     }
@@ -226,8 +226,8 @@ export default function SimulationPage() {
       toast.success(`Retur diajukan untuk pesanan ${orderId} (Item Spesifik).`);
       setOrders(prev => prev.map(o => o.id === orderId ? { ...o, status: 'RETURNED' } : o));
       setReturnItemDialogState(null);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setLoadingAction(null);
     }

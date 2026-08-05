@@ -1,4 +1,3 @@
-import { toast } from 'sonner';
 
 export type SimulatedOrder = {
   id: string;

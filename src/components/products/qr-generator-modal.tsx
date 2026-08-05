@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { QrCode, Printer, Loader2 } from "lucide-react";
@@ -52,28 +52,29 @@ export function QrGeneratorModal({ batchId }: QrGeneratorModalProps) {
         }
       }, 50);
       
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
       setIsOpen(false);
     } finally {
       setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    if (isOpen) {
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (open) {
       fetchQrData();
     } else {
       setQrData(null);
     }
-  }, [isOpen]);
+  };
 
   const handlePrint = () => {
     window.print();
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger render={<Button variant="outline" size="sm" title="Cetak QR Code" />}>
         <QrCode className="h-4 w-4 md:mr-2" />
         <span className="hidden md:inline">Cetak QR</span>

@@ -24,6 +24,36 @@ function expiryPriority(daysRemaining: number): "HIGH" | "MEDIUM" | "LOW" {
 
 const PRIORITY_WEIGHT: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
 
+// Klien Supabase di project ini sengaja tidak diberi tipe skema hasil-generate,
+// jadi hasil query datang longgar. Dua bentuk di bawah ini punya relasi
+// bersarang hasil join, dideklarasikan supaya aksesnya tetap terperiksa.
+//
+// Catatan penting soal `as unknown as ...` di bawah: tanpa tipe skema,
+// Supabase menebak SEMUA relasi bersarang sebagai array. Untuk relasi
+// many-to-one (returns -> order_items, stock_ledger -> product_batches)
+// PostgREST sebenarnya mengembalikan OBJEK TUNGGAL, bukan array. Bentuk
+// di bawah ini yang benar secara runtime, jadi tebakan Supabase perlu
+// ditimpa. Sebelumnya hal ini disembunyikan dengan `as any`, yang berarti
+// akses field-nya sama sekali tidak diperiksa.
+type PendingReturnRow = {
+  id: string;
+  qty: number;
+  created_at: string;
+  order_items: { products: { sku: string; name: string } | null } | null;
+  orders: { channel: string; external_order_id: string } | null;
+};
+
+type RecentLedgerRow = {
+  id: string;
+  movement_type: string;
+  qty_delta: number;
+  created_at: string;
+  product_batches: {
+    batch_code: string;
+    products: { sku: string; name: string } | null;
+  } | null;
+};
+
 export async function GET() {
   const supabase = await createClient();
 
@@ -116,7 +146,7 @@ export async function GET() {
   }
 
   for (const ret of pendingReturnsRes.data ?? []) {
-    const r = ret as any;
+    const r = ret as unknown as PendingReturnRow;
     const productName = r.order_items?.products?.name ?? "Produk tidak diketahui";
     const externalOrderId = r.orders?.external_order_id ?? "-";
     const ageMs = Date.now() - new Date(r.created_at).getTime();
@@ -145,7 +175,7 @@ export async function GET() {
 
   worklist.sort((a, b) => PRIORITY_WEIGHT[a.priority] - PRIORITY_WEIGHT[b.priority]);
 
-  const recentMovements = (recentLedgerRes.data ?? []).map((row: any) => ({
+  const recentMovements = ((recentLedgerRes.data as unknown as RecentLedgerRow[]) ?? []).map((row) => ({
     id: row.id,
     product_name: row.product_batches?.products?.name ?? "-",
     sku: row.product_batches?.products?.sku ?? "-",

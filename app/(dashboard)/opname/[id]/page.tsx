@@ -7,12 +7,12 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useOpnameSessionDetail, submitOpnameItem, closeOpnameSession } from "@/hooks/useOpname";
 import { CameraScanner } from "@/components/opname/camera-scanner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, ScanBarcode, Send, Lock, ArrowLeft } from "lucide-react";
+import { Loader2, ScanBarcode, Lock, ArrowLeft, Send } from "lucide-react";
 import { toast } from "sonner";
 
 const formSchema = z.object({
@@ -101,8 +101,8 @@ export default function OpnameSessionDetail() {
       setTimeout(() => {
         batchInputRef.current?.focus();
       }, 100);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -131,8 +131,8 @@ export default function OpnameSessionDetail() {
       }
       mutate();
       router.push("/opname");
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
       setIsClosing(false);
     }
   };

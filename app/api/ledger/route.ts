@@ -1,6 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { ok, handleError } from "@/lib/api-response";
 
+// Cuma bagian yang dipakai untuk menyaring per produk. Kolom lain memang
+// ikut di-select tapi diteruskan apa adanya ke pemanggil, jadi tidak perlu
+// dideklarasikan di sini.
+type LedgerRowForFilter = { product_batches: { product_id: string } | null };
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const batchId = searchParams.get("batch_id");
@@ -27,7 +32,8 @@ export async function GET(request: Request) {
 
   const filtered = productId
     ? (data ?? []).filter(
-        (row: any) => row.product_batches?.product_id === productId
+        (row) =>
+          (row as unknown as LedgerRowForFilter).product_batches?.product_id === productId
       )
     : data;
 

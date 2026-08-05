@@ -69,8 +69,8 @@ export function OpeningBalanceForm() {
       form.reset();
       setOpen(false);
       mutate(); // Refresh tabel produk
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setIsLoading(false);
     }
@@ -86,7 +86,9 @@ export function OpeningBalanceForm() {
         <SheetHeader>
           <SheetTitle>Input Stok Awal (Opening Balance)</SheetTitle>
           <SheetDescription>
-            Gunakan ini khusus untuk mencatat stok awal yang masih perkiraan saat sistem pertama kali dipakai. Stok ini akan ditandai "Belum Terverifikasi" sampai dihitung ulang lewat Stok Opname.
+            <p className="text-sm text-muted-foreground mt-4 leading-relaxed">
+              <strong className="text-foreground">Penting:</strong> Ini adalah form khusus untuk mencatat stok yang sudah ada di gudang sebelum sistem ini digunakan, BUKAN untuk mencatat barang masuk dari pabrik. Status entri ini otomatis ditandai sebagai <strong className="text-amber-500">&quot;Belum Terverifikasi&quot;</strong> sampai Anda melakukan Stok Opname untuk mencocokkan angka ini dengan fisik aslinya.
+            </p>
           </SheetDescription>
         </SheetHeader>
         <div className="mt-6">

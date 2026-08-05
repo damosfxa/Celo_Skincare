@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,21 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
   const [currentZoom, setCurrentZoom] = useState<number>(1);
   
   const scannerRef = useRef<Html5Qrcode | null>(null);
+  const hasScannedRef = useRef(false);
+
+  const stopScanner = useCallback(async () => {
+    setZoomCapability(null);
+    const scanner = scannerRef.current;
+    if (!scanner) return;
+    try {
+      await scanner.stop();
+      scanner.clear();
+    } catch {
+      // ignore
+    } finally {
+      setIsScanning(false);
+    }
+  }, []);
   
   // Pola ref untuk onScan agar mendapat closure terbaru tanpa me-restart useEffect utama
   const onScanRef = useRef(onScan);
@@ -31,15 +46,9 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
 
   useEffect(() => {
     return () => {
-      if (scannerRef.current && isScanning) {
-        try {
-          scannerRef.current.stop().catch(() => {});
-        } catch {
-          // ignore sync error
-        }
-      }
+      void stopScanner();
     };
-  }, [isScanning]);
+  }, [stopScanner]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -52,6 +61,7 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
         scannerRef.current = new Html5Qrcode("reader", { formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE], verbose: false });
       }
 
+      hasScannedRef.current = false;
       setIsScanning(true);
       scannerRef.current.start(
         { facingMode: "environment" },
@@ -61,11 +71,15 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
           aspectRatio: 1.0
         },
         (decodedText) => {
-          // Success callback
-          toast.success("QR Berhasil dipindai!");
-          // Panggil lewat ref agar selalu versi fungsi terbaru
-          onScanRef.current(decodedText);
-          setIsOpen(false);
+          if (!hasScannedRef.current) {
+            hasScannedRef.current = true;
+            void stopScanner();
+            // Success callback
+            toast.success("QR Berhasil dipindai!");
+            // Panggil lewat ref agar selalu versi fungsi terbaru
+            onScanRef.current(decodedText);
+            setIsOpen(false);
+          }
         },
         () => {
           // Parse errors are ignored (it just means it hasn't found a QR yet)
@@ -137,17 +151,7 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
     if (!open) {
-      setZoomCapability(null);
-      if (scannerRef.current && isScanning) {
-        try {
-          scannerRef.current.stop().then(() => {
-            setIsScanning(false);
-            scannerRef.current?.clear();
-          }).catch(() => setIsScanning(false));
-        } catch {
-          setIsScanning(false);
-        }
-      }
+      void stopScanner();
     }
   };
 

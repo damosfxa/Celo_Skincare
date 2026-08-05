@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const componentSchema = z.object({
   component_product_id: z.string().min(1, "Produk komponen harus dipilih"),
@@ -86,9 +87,10 @@ export default function ProductDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center p-12 text-muted-foreground">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-3 text-lg">Memuat detail produk...</span>
+      <div className="space-y-6 max-w-4xl mx-auto mt-6">
+        <Skeleton className="h-10 w-1/3" />
+        <Skeleton className="h-[200px] w-full" />
+        <Skeleton className="h-[300px] w-full" />
       </div>
     );
   }

@@ -8,6 +8,7 @@ import { useReturns, inspectReturn, ReturnItem } from "@/hooks/useReturns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -160,9 +161,10 @@ export default function ReturnsPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex justify-center p-8 text-muted-foreground">
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <span className="ml-2">Memuat daftar retur...</span>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
             </div>
           ) : isError ? (
             <div className="text-destructive p-4 border rounded-md bg-destructive/10">

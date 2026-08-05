@@ -4,7 +4,8 @@ import { useExpiringNotifications, useTiktokClaims, useUnverifiedOpeningBalances
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Bell, ShieldCheck, CheckCircle2, Ticket, ClipboardList } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Bell, ShieldCheck, CheckCircle2, Ticket, ClipboardList } from "lucide-react";
 
 export default function NotificationsPage() {
   const { notifications, isLoading, isError } = useExpiringNotifications();
@@ -75,9 +76,10 @@ export default function NotificationsPage() {
         </CardHeader>
         <CardContent>
           {isLoadingUnverified ? (
-            <div className="flex justify-center p-8 text-muted-foreground">
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <span className="ml-2">Memuat data stok awal...</span>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
             </div>
           ) : isErrorUnverified ? (
             <div className="text-destructive p-4 border rounded-md bg-destructive/10">
@@ -136,9 +138,10 @@ export default function NotificationsPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex justify-center p-8 text-muted-foreground">
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <span className="ml-2">Memuat notifikasi...</span>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
             </div>
           ) : isError ? (
             <div className="text-destructive p-4 border rounded-md bg-destructive/10">
@@ -198,9 +201,10 @@ export default function NotificationsPage() {
         </CardHeader>
         <CardContent>
           {isLoadingClaims ? (
-            <div className="flex justify-center p-8 text-muted-foreground">
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <span className="ml-2">Memuat data klaim...</span>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
             </div>
           ) : isErrorClaims ? (
             <div className="text-destructive p-4 border rounded-md bg-destructive/10">

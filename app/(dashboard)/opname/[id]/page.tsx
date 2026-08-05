@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, ScanBarcode, Lock, ArrowLeft, Send } from "lucide-react";
 import { toast } from "sonner";
 
@@ -139,9 +140,10 @@ export default function OpnameSessionDetail() {
 
   if (isLoadingSession) {
     return (
-      <div className="flex justify-center p-8 text-muted-foreground">
-        <Loader2 className="h-6 w-6 animate-spin" />
-        <span className="ml-2">Memuat sesi...</span>
+      <div className="space-y-6 max-w-4xl mx-auto mt-6">
+        <Skeleton className="h-10 w-1/3" />
+        <Skeleton className="h-[200px] w-full" />
+        <Skeleton className="h-[300px] w-full" />
       </div>
     );
   }

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { LogOut, Menu } from "lucide-react";
 import { NavLinks } from "@/components/layout/nav-links";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -27,8 +28,14 @@ export default async function DashboardLayout({
       {/* Mobile Topbar */}
       <div className="flex md:hidden h-16 items-center px-4 border-b bg-card justify-between sticky top-0 z-20">
         <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold">
-            CB
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-white overflow-hidden shrink-0">
+            <Image
+              src="/logo-celo-beaute.jpg"
+              alt="Celo Beaute"
+              width={32}
+              height={32}
+              className="rounded-md object-cover"
+            />
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-sm leading-tight">Celo Beaute</span>
@@ -41,8 +48,14 @@ export default async function DashboardLayout({
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
             <div className="h-16 flex items-center px-6 border-b gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold">
-                CB
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-white overflow-hidden shrink-0">
+                <Image
+                  src="/logo-celo-beaute.jpg"
+                  alt="Celo Beaute"
+                  width={32}
+                  height={32}
+                  className="rounded-md object-cover"
+                />
               </div>
               <div className="flex flex-col">
                 <span className="font-bold text-sm leading-tight">Celo Beaute</span>
@@ -66,8 +79,14 @@ export default async function DashboardLayout({
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 flex-shrink-0 border-r bg-card flex-col sticky top-0 h-screen">
         <div className="h-16 flex items-center px-6 border-b gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold">
-            CB
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-white overflow-hidden shrink-0">
+            <Image
+              src="/logo-celo-beaute.jpg"
+              alt="Celo Beaute"
+              width={32}
+              height={32}
+              className="rounded-md object-cover"
+            />
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-sm leading-tight">Celo Beaute</span>

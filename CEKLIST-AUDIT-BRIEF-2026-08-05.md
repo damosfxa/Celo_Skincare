@@ -1,6 +1,7 @@
 # Ceklist Audit Menyeluruh vs Brief
 
 **Dibuat:** 2026-08-05 (setelah semua perbaikan hari ini: Task A, B, D, E selesai)
+**Diverifikasi ulang:** 2026-08-05, brief dibaca lagi langsung dari file PDF asli (bukan dari ingatan percakapan) dan dicocokkan baris-per-baris ke isi checklist ini. Hasilnya: semua 50 poin sudah tercakup, 2 baris bukti diperkuat (poin 35 & 40, sebelumnya cuma menunjuk ke poin lain yang ternyata tidak menjelaskan detail spesifiknya), dan 1 judul bagian yang salah hitung diperbaiki ("11 poin" jadi "14 poin", isinya sendiri sudah benar dari awal).
 **Acuan:** `../Brief Bounty/stok-management-system.pdf` (Brief 1, 3 halaman) dan `../Brief Bounty/stok-management-system brief 2.pdf` (Sync Update Phase 2 v2, 13 Juni 2026)
 
 Urutan mengikuti kedua dokumen brief persis, dari Brief 1 lalu Brief 2. Setiap baris sudah dicek langsung ke kode/database, bukan ditebak dari ingatan.
@@ -87,19 +88,21 @@ Urutan mengikuti kedua dokumen brief persis, dari Brief 1 lalu Brief 2. Setiap b
 | 30 | Layar konfirmasi sebelum commit untuk penulisan manual permanen | ✅ | Dicek ulang hari ini: dialog "Konfirmasi Mutasi Manual" (`simulation/page.tsx:607`) dan "Koreksi Entri Ledger" (`ledger/page.tsx:502`) masih ada setelah semua perubahan Gemini |
 | 31 | Bonus/promo/sampel wajib referensi ringan (campaign/approval) | ✅ | `campaign_reference` wajib untuk 3 reason itu, 3 lapis (Zod, RPC, CHECK constraint), **dan sekarang tampil di halaman Ledger** (Task A, selesai hari ini) |
 
-### Arah Teknis: Recap (11 poin)
+### Arah Teknis: Recap (14 poin)
+
+*(Judul sebelumnya salah tulis "11 poin", isinya sebenarnya sudah 14 baris di bawah ini sejak awal, cuma label judulnya yang keliru dihitung. Dikoreksi 2026-08-05 setelah baca ulang brief dari file PDF langsung.)*
 
 | # | Tuntutan | Status | Bukti |
 |---|---|---|---|
 | 32 | Stack: Next.js + TypeScript + Supabase (Postgres) | ✅ | Sama seperti #19 |
 | 33 | Ledger append-only, saldo hasil agregasi, immutability dikunci di level DB (cabut UPDATE/DELETE + trigger), tulis lewat RPC | ✅ | `0123`+`0124`: REVOKE + 2 trigger penolak + 7 RPC `SECURITY DEFINER`, terverifikasi tes eksplisit menolak insert langsung (`code 42501`) |
 | 34 | Performa: baca saldo O(1) via cache, bukan SUM full-scan tiap query | ✅ | `0125`: jalur panas (FEFO, buka opname, notifikasi kedaluwarsa) baca dari `batch_stock_summary`/`product_stock_summary`. Diverifikasi 0 selisih vs SUM asli sebelum dialihkan |
-| 35 | Barang dihitung keluar saat SHIPPED/IN_TRANSIT, sebelum itu reservasi | ✅ | Sama seperti #13 |
+| 35 | Barang dihitung keluar saat SHIPPED/IN_TRANSIT, sebelum itu reservasi. Batal sebelum shipped = lepas reservasi, batal sesudah shipped = ledger reversal | ✅ | Sama seperti #13 untuk pemicu SHIPPED/IN_TRANSIT. Untuk pembatalan: `src/lib/services/orders.ts:233` (`status === "PENDING"` → `ledger_written: false`, tanpa entri ledger) vs baris 258 (sesudah shipped → insert `returns` type `CANCELLATION` untuk diinspeksi, ledger reversal lewat `IN_CANCEL_REVERSAL` setelah inspeksi) |
 | 36 | FEFO otomatis, operator tidak pernah pilih batch | ✅ | Sama seperti #15 |
 | 37 | Bundle dipecah satuan lewat resep admin, di-versioning, order lama tidak berubah | ✅ | Sama seperti #16 |
 | 38 | Channel dan reason dua kolom terpisah, enum sesuai daftar | ✅ | `channel`: shopee/tiktok/offline/internal; `reason`: offline/bonus/promo/sample/damaged/expired, dua-duanya CHECK constraint |
 | 39 | Retur: kondisi diputuskan manual gudang | ✅ | Sama seperti #18 |
-| 40 | Dua ritme rekonsiliasi (harian + opname) | ✅ | Sama seperti #17 |
+| 40 | Dua ritme rekonsiliasi (harian + opname). Koreksi opname = entri ledger baru bertaut ke sesi | ✅ | Sama seperti #17 untuk dua ritmenya. Untuk "bertaut ke sesi": `migrations/0110_add_opname_discrepancy_reason.sql:35`, `fn_close_opname_session` insert `ADJUSTMENT_OPNAME` dengan `reference_type='opname_session'`, `reference_id=p_session_id` |
 | 41 | Reminder klaim TikTok 40 hari + notifikasi kedaluwarsa per batch | ✅ | Sama seperti #6, #7 |
 | 42 | Tanpa harga/uang, murni kuantitas | ✅ | Sama seperti #12 |
 | 43 | 1 role Admin, tidak ada sub-role, koreksi tidak butuh approval | ✅ | `profiles.role` selalu `'admin'`, nol logika approval di kode |

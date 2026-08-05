@@ -7,6 +7,7 @@ import { QrGeneratorModal } from "@/components/products/qr-generator-modal";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -315,9 +316,16 @@ export default function LedgerPage() {
                   Silakan pilih produk terlebih dahulu untuk melihat riwayat ledger.
                 </div>
               ) : isLoadingDrilldown ? (
-                <div className="flex justify-center p-8 text-muted-foreground">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                  <span className="ml-2">Memuat riwayat ledger...</span>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-lg border">
+                    <Skeleton className="h-5 w-48" />
+                    <Skeleton className="h-8 w-24" />
+                  </div>
+                  <div className="space-y-4">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Skeleton key={i} className="h-12 w-full" />
+                    ))}
+                  </div>
                 </div>
               ) : drilldownData ? (
                 <div className="space-y-4">
@@ -442,9 +450,10 @@ export default function LedgerPage() {
             </CardHeader>
             <CardContent>
               {isLoadingAnomalies ? (
-                <div className="flex justify-center p-8 text-muted-foreground">
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                  <span className="ml-2">Mengecek anomali...</span>
+                <div className="space-y-4">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-12 w-full" />
+                  ))}
                 </div>
               ) : anomalies.length === 0 ? (
                 <div className="text-center p-8 border border-dashed rounded-md text-muted-foreground flex flex-col items-center justify-center">

@@ -52,7 +52,7 @@ export default function PanduanPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <LayoutDashboard className="h-5 w-5 text-sky-500" />
+              <LayoutDashboard className="h-5 w-5 text-primary" />
               1. Tugas Hari Ini (Halaman Utama)
             </CardTitle>
             <CardDescription>Ringkasan hal-hal yang butuh perhatian, dilihat pertama setiap buka sistem.</CardDescription>
@@ -86,7 +86,7 @@ export default function PanduanPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Box className="h-5 w-5 text-emerald-500" />
+              <Box className="h-5 w-5 text-primary" />
               2. Produk & Batch
             </CardTitle>
             <CardDescription>Kelola daftar produk, penerimaan barang, dan stok awal.</CardDescription>
@@ -116,7 +116,7 @@ export default function PanduanPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-blue-500" />
+              <FileText className="h-5 w-5 text-primary" />
               3. Ledger & Rekonsiliasi
             </CardTitle>
             <CardDescription>&quot;Buku besar&quot; tempat menelusuri semua pergerakan stok.</CardDescription>
@@ -151,7 +151,7 @@ export default function PanduanPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Repeat className="h-5 w-5 text-purple-500" />
+              <Repeat className="h-5 w-5 text-primary" />
               4. Retur
             </CardTitle>
             <CardDescription>Memutuskan nasib barang yang dikembalikan pembeli, atau batal setelah dikirim.</CardDescription>
@@ -182,7 +182,7 @@ export default function PanduanPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <ScanBarcode className="h-5 w-5 text-amber-500" />
+              <ScanBarcode className="h-5 w-5 text-primary" />
               5. Stok Opname
             </CardTitle>
             <CardDescription>Mencocokkan catatan sistem dengan hasil hitung fisik gudang. Biasanya dilakukan berkala (mis. tiap 1-3 bulan).</CardDescription>
@@ -208,7 +208,7 @@ export default function PanduanPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Beaker className="h-5 w-5 text-orange-500" />
+              <Beaker className="h-5 w-5 text-primary" />
               6. Simulasi
             </CardTitle>
             <CardDescription>Karena sistem belum tersambung ke API Shopee/TikTok Shop asli, halaman ini jadi jalan masuk data pesanan.</CardDescription>
@@ -240,7 +240,7 @@ export default function PanduanPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5 text-red-500" />
+              <Bell className="h-5 w-5 text-primary" />
               7. Notifikasi
             </CardTitle>
             <CardDescription>Tidak ada yang perlu dilakukan di sini, cukup dicek berkala. Semua notifikasi tampil di dalam aplikasi (in-app), tidak dikirim lewat email atau WhatsApp.</CardDescription>
@@ -258,7 +258,7 @@ export default function PanduanPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <PackageX className="h-5 w-5 text-rose-500" />
+              <PackageX className="h-5 w-5 text-primary" />
               8. Resiko Oversell
             </CardTitle>
             <CardDescription>Peringatan dini kalau pesanan yang belum dikirim melebihi stok yang benar-benar tersedia.</CardDescription>
@@ -279,7 +279,7 @@ export default function PanduanPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <SunMoon className="h-5 w-5 text-indigo-500" />
+              <SunMoon className="h-5 w-5 text-primary" />
               9. Tema Gelap/Terang
             </CardTitle>
           </CardHeader>
@@ -298,7 +298,7 @@ export default function PanduanPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Smartphone className="h-5 w-5 text-teal-500" />
+              <Smartphone className="h-5 w-5 text-primary" />
               10. Memakai di HP/Tablet
             </CardTitle>
             <CardDescription>Sistem ini dirancang bisa dipakai penuh dari HP, karena kegiatan seperti Stok Opname biasanya dilakukan sambil jalan keliling gudang.</CardDescription>
@@ -322,7 +322,7 @@ export default function PanduanPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Tags className="h-5 w-5 text-fuchsia-500" />
+              <Tags className="h-5 w-5 text-primary" />
               11. Daftar Istilah & Kode di Sistem
             </CardTitle>
             <CardDescription>Kode-kode singkat yang muncul di halaman Ledger, Simulasi, dan Retur, dijelaskan artinya di sini biar tidak perlu menebak.</CardDescription>

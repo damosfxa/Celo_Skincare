@@ -12,6 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, Package, Layers } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
@@ -45,9 +46,10 @@ export default function ProductsPage() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex justify-center p-8 text-muted-foreground">
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <span className="ml-2">Memuat data produk...</span>
+            <div className="space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
             </div>
           ) : isError ? (
             <div className="text-destructive p-4 border rounded-md bg-destructive/10">

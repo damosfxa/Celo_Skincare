@@ -26,14 +26,28 @@ export default async function DashboardLayout({
     <div className="flex min-h-screen flex-col md:flex-row">
       {/* Mobile Topbar */}
       <div className="flex md:hidden h-16 items-center px-4 border-b bg-card justify-between sticky top-0 z-20">
-        <div className="font-semibold text-lg">Rekonsiliasi Stok</div>
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold">
+            CB
+          </div>
+          <div className="flex flex-col">
+            <span className="font-bold text-sm leading-tight">Celo Beaute</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Rekonsiliasi Stok</span>
+          </div>
+        </div>
         <Sheet>
           <SheetTrigger render={<Button variant="ghost" size="icon" />}>
             <Menu className="h-5 w-5" />
           </SheetTrigger>
           <SheetContent side="left" className="w-64 p-0">
-            <div className="h-16 flex items-center px-6 border-b font-semibold text-lg">
-              Rekonsiliasi Stok
+            <div className="h-16 flex items-center px-6 border-b gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold">
+                CB
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-sm leading-tight">Celo Beaute</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Rekonsiliasi Stok</span>
+              </div>
             </div>
             <nav className="flex-1 px-4 py-4 space-y-2">
               <NavLinks />
@@ -51,8 +65,14 @@ export default async function DashboardLayout({
 
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex w-64 flex-shrink-0 border-r bg-card flex-col sticky top-0 h-screen">
-        <div className="h-16 flex items-center px-6 border-b font-semibold text-lg">
-          Rekonsiliasi Stok
+        <div className="h-16 flex items-center px-6 border-b gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground font-bold">
+            CB
+          </div>
+          <div className="flex flex-col">
+            <span className="font-bold text-sm leading-tight">Celo Beaute</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Rekonsiliasi Stok</span>
+          </div>
         </div>
         <nav className="flex-1 px-4 py-4 space-y-2">
           <NavLinks />

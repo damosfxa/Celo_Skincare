@@ -244,6 +244,19 @@ export default function SimulationPage() {
         </div>
       </div>
 
+      <div className="bg-sky-50 dark:bg-sky-900/20 border border-sky-200 dark:border-sky-800 rounded-lg p-4 flex items-start gap-3">
+        <div className="text-sky-500 mt-0.5">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        </div>
+        <div>
+          <h4 className="text-sm font-semibold text-sky-800 dark:text-sky-300">Baru menggunakan Simulasi?</h4>
+          <p className="text-sm text-sky-700 dark:text-sky-400 mt-1">
+            Halaman ini dipakai untuk memasukkan data pesanan karena sistem belum tersambung ke API asli.
+            Silakan baca <a href="/panduan" className="underline font-medium hover:text-sky-900 dark:hover:text-sky-200">Panduan Simulasi</a> untuk memahami cara kerjanya.
+          </p>
+        </div>
+      </div>
+
       <Card className="border-primary/50 shadow-sm bg-muted/20">
         <CardHeader className="pb-4">
           <CardTitle className="text-lg">Buat Pesanan Fiktif</CardTitle>

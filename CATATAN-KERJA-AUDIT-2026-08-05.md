@@ -164,16 +164,19 @@ Status per 2026-08-05, setelah `0123`/`0124`/`0125` selesai di kedua database da
 - ~~Validasi fungsional langsung di aplikasi~~ — **selesai**, 3 alur inti dicoba tangan sendiri di aplikasi asli (lihat "Validasi manual" di bawah).
 - ~~`migrations/README.md` basi~~ — **selesai**, sudah ditulis ulang, sekarang mendata seluruh `0100`–`0125` plus daftar apa saja yang sudah ditegakkan di level database.
 
-### Masih perlu dilakukan user
+### Selesai (lanjutan)
 
-1. **Cek ulang deploy sebelum submission.** `BOUNTY-INSIGHTS.md` mencatat URL live pernah basi ~2 minggu tanpa disadari. Bandingkan commit terakhir di GitHub dengan yang di lokal, dan pastikan Vercel sudah men-deploy commit terbaru (termasuk perubahan 3 file API yang baca cache, dari Temuan D) sebelum submission. **Ini belum dicek sama sekali di sesi ini** -- semua kerja migration di atas jalan di database, bukan soal deploy kode.
-2. **Bersihkan (atau biarkan) jejak data tes** yang barusan tercipta di database ASLI selama validasi manual:
+- ~~Cek ulang deploy~~ -- **selesai**. Commit `e6c2b01` di-push ke `origin/main`, Vercel deploy status `Ready`, diverifikasi live di `https://stok-rekonsiliasi-skincare.vercel.app`: stok Serum Vitamin C 30ml tetap 169, breakdown per batch normal. Kode yang baru (termasuk 3 file API pembaca cache dari Temuan D) sudah benar-benar live, bukan cuma ter-push.
+
+### Masih perlu dilakukan user (opsional, tidak mendesak)
+
+1. **Bersihkan (atau biarkan) jejak data tes** yang tercipta di database ASLI selama validasi manual:
    - Batch `TES-0124-001` (Serum Vitamin C 30ml, +1 pcs, IN_MAKLON)
    - 1 order simulasi TikTok berstatus IN_TRANSIT (-1 pcs, OUT_SALE_MARKETPLACE)
    - 1 entri keluar manual reason "offline", catatan "tes kunci ledger" (-1 pcs, OUT_MANUAL)
 
    Semuanya kecil (total net -1 pcs) dan tertandai jelas sebagai data tes, jadi aman dibiarkan. Kalau mau rapi, bisa dihapus jejaknya lewat **Koreksi Entri** di halaman Ledger (cari 3 entri itu, koreksi masing-masing supaya net effect-nya nol) -- bukan migration, cukup lewat UI seperti operator biasa.
-3. **Kasih `FEEDBACK-UI-UNTUK-GEMINI.md` ke Gemini/Antigravity.** Sudah selesai ditulis di sesi ini, tinggal langkah kamu meneruskannya -- di luar wilayah kerja backend.
+2. **Kasih `FEEDBACK-UI-UNTUK-GEMINI.md` ke Gemini/Antigravity.** Sudah selesai ditulis di sesi ini, tinggal langkah kamu meneruskannya -- di luar wilayah kerja backend.
 
 ---
 

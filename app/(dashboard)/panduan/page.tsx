@@ -54,13 +54,13 @@ export default function PanduanPage() {
             <CardDescription>Ringkasan hal-hal yang butuh perhatian, dilihat pertama setiap buka sistem.</CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
+            <ul className="list-disc pl-5 space-y-3 leading-relaxed text-muted-foreground">
               <li>
                 <strong>4 kartu ringkasan</strong> di bagian atas: Total SKU Aktif, Batch Mendekati Kedaluwarsa, Retur Menunggu Inspeksi, dan Anomali Terbuka. Kartu yang berwarna merah artinya ada hal yang perlu segera dicek.
               </li>
               <li>
                 <strong>Worklist Hari Ini</strong>: daftar tugas yang sudah diurutkan otomatis dari yang paling mendesak (label merah = HIGH) ke yang santai (label abu-abu = LOW). Klik salah satu untuk langsung dibawa ke halaman terkait. Jenis tugas yang bisa muncul:
-                <ul className="list-circle pl-5 mt-2 space-y-1">
+                <ul className="list-circle pl-5 mt-3 space-y-2">
                   <li><strong>Resiko Oversell</strong>: ada produk yang dipesan (reserved) melebihi stok yang benar-benar tersedia. Ini prioritas tertinggi karena kalau dibiarkan, pesanan bisa gagal dikirim.</li>
                   <li><strong>Anomali Stok</strong>: kejanggalan yang ketemu dari pengecekan konsistensi harian (lihat Modul 3).</li>
                   <li><strong>Klaim TikTok</strong>: retur TikTok Shop yang mendekati batas waktu 40 hari.</li>

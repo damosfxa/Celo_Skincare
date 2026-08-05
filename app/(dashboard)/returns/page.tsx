@@ -192,8 +192,8 @@ export default function ReturnsPage() {
                         <div className="font-mono text-xs">{item.order_id}</div>
                         <div className="mt-1">
                           <Badge 
-                            variant="outline" 
-                            className={item.type === 'CANCELLATION' ? 'text-blue-500 border-blue-500 text-[10px] px-1 py-0' : 'text-purple-500 border-purple-500 text-[10px] px-1 py-0'}
+                            variant="secondary" 
+                            className={item.type === 'CANCELLATION' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-xs px-2 py-0.5' : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 text-xs px-2 py-0.5'}
                           >
                             {item.type === 'CANCELLATION' ? 'Pembatalan' : 'Retur'}
                           </Badge>
@@ -204,11 +204,11 @@ export default function ReturnsPage() {
                       <TableCell className="text-sm text-amber-600 font-medium">{formatDate(item.claim_deadline || "")}</TableCell>
                       <TableCell>
                         <Badge 
-                          variant="outline"
+                          variant="secondary"
                           className={
-                            item.condition === 'PENDING_INSPECTION' ? 'text-amber-500 border-amber-500' : 
-                            item.condition === 'SELLABLE' ? 'text-emerald-500 border-emerald-500' : 
-                            'text-red-500 border-red-500'
+                            item.condition === 'PENDING_INSPECTION' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-500 text-xs' : 
+                            item.condition === 'SELLABLE' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-500 text-xs' : 
+                            'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500 text-xs'
                           }
                         >
                           {item.condition === 'PENDING_INSPECTION' ? 'Menunggu Inspeksi' : item.condition}

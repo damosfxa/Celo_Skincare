@@ -24,6 +24,7 @@ export default function LedgerPage() {
   // States untuk Filter
   const [filterMovementType, setFilterMovementType] = useState<string>("all");
   const [filterChannel, setFilterChannel] = useState<string>("all");
+  const [filterReason, setFilterReason] = useState<string>("all");
   const [filterDateFrom, setFilterDateFrom] = useState<string>("");
   const [filterDateTo, setFilterDateTo] = useState<string>("");
 
@@ -117,12 +118,23 @@ export default function LedgerPage() {
     ? Array.from(new Set(drilldownData.ledger.map(e => e.movement_type)))
     : [];
 
+  const uniqueReasons = drilldownData?.ledger 
+    ? Array.from(new Set(drilldownData.ledger.map(e => e.reason).filter(Boolean))) as string[]
+    : [];
+
   const filteredRows = drilldownData?.ledger
     ? drilldownData.ledger.map((entry, idx) => ({ entry, idx })).filter(({ entry }) => {
         let match = true;
         
         if (filterMovementType !== "all" && entry.movement_type !== filterMovementType) {
           match = false;
+        }
+        
+        if (filterReason !== "all") {
+          const entryReason = entry.reason || "none";
+          if (entryReason.toLowerCase() !== filterReason.toLowerCase()) {
+            match = false;
+          }
         }
         
         if (filterChannel !== "all") {
@@ -152,7 +164,7 @@ export default function LedgerPage() {
       return;
     }
     
-    const headers = ["Waktu", "Batch ID", "Tipe Mutasi", "Channel", "Referensi", "Perubahan Qty", "Saldo Berjalan"];
+    const headers = ["Waktu", "Batch ID", "Tipe Mutasi", "Channel", "Referensi", "Alasan", "Ref. Campaign", "Perubahan Qty", "Saldo Berjalan"];
     
     const rows = filteredRows.map(({ entry, idx }) => {
       const waktu = formatDate(entry.created_at);
@@ -160,10 +172,12 @@ export default function LedgerPage() {
       const type = entry.movement_type;
       const channel = entry.channel || "-";
       const reference = entry.reference_type ? `${entry.reference_type}: ${entry.reference_id}` : "-";
+      const reason = entry.reason || "-";
+      const campaign = entry.campaign_reference || "-";
       const qty = entry.qty_delta;
       const saldo = runningBalances[idx] !== undefined ? runningBalances[idx] : 0;
       
-      return [waktu, batchId, type, channel, reference, qty, saldo].join(";");
+      return [waktu, batchId, type, channel, reference, reason, campaign, qty, saldo].join(";");
     });
     
     const csvString = [headers.join(";"), ...rows].join("\n");
@@ -229,7 +243,7 @@ export default function LedgerPage() {
                     </Button>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-xs">Tipe Mutasi</Label>
                       <select
@@ -240,6 +254,20 @@ export default function LedgerPage() {
                         <option value="all">Semua</option>
                         {uniqueMovementTypes.map(type => (
                           <option key={type} value={type}>{type.replace(/_/g, " ")}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Alasan (Manual)</Label>
+                      <select
+                        value={filterReason}
+                        onChange={(e) => setFilterReason(e.target.value)}
+                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      >
+                        <option value="all">Semua</option>
+                        {uniqueReasons.map(reason => (
+                          <option key={reason} value={reason} className="capitalize">{reason.replace(/_/g, " ")}</option>
                         ))}
                       </select>
                     </div>
@@ -343,6 +371,14 @@ export default function LedgerPage() {
                                   <span className="capitalize">{entry.reference_type}: {entry.reference_id?.substring(0, 8)}...</span>
                                 ) : (
                                   "-"
+                                )}
+                                {entry.reason && (
+                                  <div className="mt-1 text-xs text-foreground font-medium capitalize">
+                                    {entry.reason.replace(/_/g, " ")}
+                                    {entry.campaign_reference && (
+                                      <span className="text-muted-foreground block text-[11px] font-normal mt-0.5">Ref: {entry.campaign_reference}</span>
+                                    )}
+                                  </div>
                                 )}
                               </TableCell>
                               <TableCell>

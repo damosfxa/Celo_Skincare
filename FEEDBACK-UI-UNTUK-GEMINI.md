@@ -4,7 +4,39 @@
 **Dikumpulkan:** 2026-08-04.
 **Ditulis oleh:** Claude Code, setelah audit backend Phase 2 — bukan aku yang mengerjakan perbaikan ini (wilayah frontend bukan punyaku, lihat `CLAUDE.md`), jadi dokumen ini murni observasi + lokasi kode, bukan instruksi desain yang sudah final. Putuskan sendiri pendekatan visualnya.
 
-Semua di bawah ini soal **tampilan/kontras/kejelasan istilah** — tidak ada temuan yang menyentuh logika stok.
+Poin 1–5 di bawah soal **tampilan/kontras/kejelasan istilah**. Poin 0 (paling atas, ditambahkan 2026-08-05) berasal dari audit ulang terhadap brief, bukan dari tester — dan **prioritasnya paling tinggi**.
+
+---
+
+## 0. [PRIORITAS TERTINGGI] Halaman Ledger/Drilldown tidak menampilkan alasan & referensi campaign
+
+**Sumber:** audit ulang terhadap brief, 2026-08-05 (bukan dari tester).
+
+Ini gap nyata terhadap kriteria penilaian **nomor 1** di brief, bukan sekadar preferensi visual.
+
+**Kenapa penting.** Brief menyebut bonus/promo/sampel sebagai *"sumber selisih terbesar"*, dan Sync Update Phase 2 menegaskan tujuannya: *"kebocoran terbesar bukan sekadar tercatat, tapi bisa dijelaskan ke siapa & kenapa."* Sistem sudah **mewajibkan** operator mengisi referensi campaign untuk bonus/promo/sample, dan API sudah mengirimkan datanya — tapi halaman yang seharusnya dipakai menelusuri selisih tidak pernah menampilkannya.
+
+Akibatnya di tabel ledger, semua pengeluaran manual terlihat sama saja sebagai badge `OUT MANUAL`. Bonus, promo, sampel, penjualan offline, barang rusak, dan kedaluwarsa tidak bisa dibedakan sama sekali — padahal justru pembedaan itu inti dari "selisih bisa ditelusuri".
+
+**Kondisi kode saat ini:**
+- [`app/api/reconciliation/drilldown/route.ts:22`](app/api/reconciliation/drilldown/route.ts:22) — API **sudah** mengirim `reason`, `note`, `campaign_reference`. Backend tidak perlu diubah sama sekali.
+- [`app/(dashboard)/ledger/page.tsx`](app/(dashboard)/ledger/page.tsx) — grep `reason` dan `campaign_reference`: **nol hasil**. Tidak pernah dirender.
+- [`src/hooks/useLedger.ts:15-25`](src/hooks/useLedger.ts:15) — type `LedgerEntry` punya `reason?` (tidak pernah dipakai) dan **tidak punya** `campaign_reference`.
+- [`app/(dashboard)/ledger/page.tsx:234`](app/(dashboard)/ledger/page.tsx:234) — filter cuma per `movement_type`, tidak bisa per `reason`.
+- [`app/(dashboard)/ledger/page.tsx:149`](app/(dashboard)/ledger/page.tsx:149) — export CSV juga tidak menyertakan kedua kolom itu.
+
+**Usulan (bentuk visualnya silakan kamu tentukan):**
+1. Tambah `campaign_reference?: string` ke type `LedgerEntry`
+2. Tampilkan kolom **Alasan** di tabel — untuk baris `OUT_MANUAL`, tampilkan reason-nya dalam bahasa manusia (Bonus / Promo / Sampel / Penjualan Offline / Barang Rusak / Kedaluwarsa)
+3. Tampilkan **Referensi Campaign** untuk baris yang punya — kolom sendiri, tooltip, atau baris detail, bebas
+4. Filter berdasarkan alasan, bukan cuma tipe mutasi
+5. Sertakan keduanya di export CSV
+
+Poin 1–3 yang paling penting; 4–5 pelengkap.
+
+---
+
+Sisanya di bawah ini dari 3 tester, semuanya soal tampilan — tidak ada yang menyentuh logika stok.
 
 ---
 

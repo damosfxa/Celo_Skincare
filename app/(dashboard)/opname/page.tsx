@@ -59,6 +59,19 @@ export default function OpnameSessionsPage() {
         </Button>
       </div>
 
+      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 flex items-start gap-3">
+        <div className="text-amber-500 mt-0.5">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+        </div>
+        <div>
+          <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-300">Cara Kerja Stok Opname</h4>
+          <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
+            Ini adalah alat untuk mencocokkan catatan sistem dengan stok fisik gudang. 
+            Belum familiar? Pelajari langkah-langkahnya di <a href="/panduan" className="underline font-medium hover:text-amber-900 dark:hover:text-amber-200">Panduan Stok Opname</a>.
+          </p>
+        </div>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Riwayat Sesi</CardTitle>

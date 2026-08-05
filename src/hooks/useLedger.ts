@@ -20,6 +20,7 @@ export type LedgerEntry = {
   reference_type?: string;
   reference_id?: string;
   reason?: string;
+  campaign_reference?: string;
   note?: string;
   channel?: string;
   created_at: string;

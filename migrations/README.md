@@ -1,12 +1,12 @@
-# Migrations — Snapshot Skema Database
+# Migrations, Snapshot Skema Database
 
 File `0100`–`0104` **bukan urutan migration asli** project (yang asli dijalankan manual satu-satu di Supabase SQL Editor sepanjang proses development, dan tidak semuanya sempat disimpan sebagai file). Kelimanya adalah **snapshot lengkap kondisi final skema database** per titik itu, diambil langsung dari database produksi yang sudah berjalan, disusun ulang jadi urutan yang bisa dijalankan dari nol.
 
-Mulai `0105` dan seterusnya, file-file di folder ini **adalah migration asli** — ditulis sebagai bagian dari alur kerja project (lihat aturan di `CLAUDE.md`: setiap perubahan skema, sekecil apa pun, wajib jadi file migration bernomor urut), bukan hasil rekonstruksi lagi.
+Mulai `0105` dan seterusnya, file-file di folder ini **adalah migration asli**, ditulis sebagai bagian dari alur kerja project (lihat aturan di `CLAUDE.md`: setiap perubahan skema, sekecil apa pun, wajib jadi file migration bernomor urut), bukan hasil rekonstruksi lagi.
 
 ## Kenapa `0100`–`0104` dibuat ulang begini
 
-Supaya siapa pun (termasuk reviewer) bisa membangun ulang database dari kosong dan mendapat hasil yang identik dengan yang dipakai aplikasi — tanpa perlu tahu histori perubahan yang sebenarnya terjadi sebelum titik itu.
+Supaya siapa pun (termasuk reviewer) bisa membangun ulang database dari kosong dan mendapat hasil yang identik dengan yang dipakai aplikasi, tanpa perlu tahu histori perubahan yang sebenarnya terjadi sebelum titik itu.
 
 ## Urutan menjalankan (di Supabase SQL Editor, project baru/kosong)
 
@@ -41,7 +41,7 @@ Jalankan berurutan dari `0100` sampai nomor terbesar yang ada di folder ini. Per
 | 0124 | `lock_ledger_immutability.sql` | **Cabut hak tulis langsung** ke `stock_ledger`/`returns` dari role aplikasi + trigger penolak UPDATE/DELETE |
 | 0125 | `read_balance_from_cache.sql` | Alihkan baca saldo (jalur panas: FEFO, buka sesi opname, batch mendekati kedaluwarsa) dari SUM ke tabel cache O(1) |
 
-Ada juga file-file tak bernomor (`cleanup-*`, `diagnostic-*`, `backfill-*`) — itu skrip operasional sekali-pakai (bersih-bersih data QA, verifikasi manual), bukan bagian dari urutan migration skema. Lihat `CATATAN-KERJA-AUDIT-2026-08-05.md` untuk konteks audit terakhir dan urutan menjalankan `0123`–`0125` dengan aman di database yang sudah berjalan (beda dengan "dari nol" di sini — kalau databasenya sudah ada isinya, jalankan `0123` dulu, tes, baru `0124`, tes lagi, baru `0125`).
+Ada juga file-file tak bernomor (`cleanup-*`, `diagnostic-*`, `backfill-*`), itu skrip operasional sekali-pakai (bersih-bersih data QA, verifikasi manual), bukan bagian dari urutan migration skema. Lihat `CATATAN-KERJA-AUDIT-2026-08-05.md` untuk konteks audit terakhir dan urutan menjalankan `0123`–`0125` dengan aman di database yang sudah berjalan (beda dengan "dari nol" di sini, kalau databasenya sudah ada isinya, jalankan `0123` dulu, tes, baru `0124`, tes lagi, baru `0125`).
 
 ## Yang sudah ditegakkan di level database (bukan cuma konvensi kode)
 

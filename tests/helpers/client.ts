@@ -15,6 +15,23 @@ if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
 
 const wsTransport = ws as unknown as typeof WebSocket;
 
+// Client service-role -- HANYA untuk menyiapkan kondisi yang memang mustahil
+// dibuat lewat jalur resmi aplikasi, misalnya baris ledger rusak untuk menguji
+// deteksi anomali.
+//
+// Sejak migration 0124, role `authenticated` sudah dicabut hak tulis
+// langsungnya ke stock_ledger -- dan itu memang tujuannya. Jadi test yang perlu
+// memalsukan kerusakan WAJIB lewat jalur khusus ini, BUKAN dengan melonggarkan
+// kembali penguncian di database. Jangan pakai helper ini untuk menguji alur
+// normal: semua alur normal harus tetap lewat client authenticated biasa,
+// persis seperti aplikasi sungguhan.
+export function getAdminClient() {
+  return createClient(supabaseUrl!, supabaseServiceKey!, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    realtime: { transport: wsTransport },
+  });
+}
+
 export async function getTestClient() {
   const email = process.env.TEST_USER_EMAIL!;
   const password = process.env.TEST_USER_PASSWORD!;

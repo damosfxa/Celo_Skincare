@@ -26,8 +26,12 @@ export async function POST(request: Request) {
   });
   if (error) return handleError(error);
 
+  // Saldo terbaru batch ini dari tabel cache, bukan view v_batch_stock
+  // (SUM full-scan seluruh ledger tiap panggil). Lihat 0125. Aman dibaca
+  // langsung setelah RPC di atas: trigger pengisi cache jalan di
+  // transaksi yang sama dengan insert ledger-nya.
   const { data: stock } = await supabase
-    .from("v_batch_stock")
+    .from("batch_stock_summary")
     .select("current_qty")
     .eq("batch_id", batchId)
     .single();

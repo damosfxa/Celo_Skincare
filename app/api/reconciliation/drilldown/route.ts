@@ -25,6 +25,12 @@ export async function GET(request: Request) {
     .order("created_at", { ascending: true });
   if (ledgerError) return handleError(ledgerError);
 
+  // SENGAJA tetap membaca v_product_stock (hitung ulang asli dari
+  // stock_ledger), bukan tabel cache seperti endpoint saldo lainnya.
+  // Ini halaman penelusuran selisih -- justru di sini angka yang
+  // dihitung ulang langsung dari ledger yang paling bisa dipercaya,
+  // dan brief mensyaratkan saldo selalu bisa diverifikasi ulang dari
+  // ledger. Bukan jalur panas, jadi biaya SUM-nya bisa diterima.
   const { data: stock } = await supabase
     .from("v_product_stock")
     .select("current_qty")

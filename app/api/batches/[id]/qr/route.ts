@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { ok, fail, handleError } from "@/lib/api-response";
 
-// Payload QR = batch_code itu sendiri. Rendering gambar QR-nya dikerjakan
+// Payload QR = batch_code itu sendiri. Rendering gambar QR nya dikerjakan
 // di sisi frontend (library qrcode di client), endpoint ini cuma nyediain
 // data yang perlu di-encode + info produk buat label cetak.
 export async function GET(

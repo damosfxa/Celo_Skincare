@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { getTestClient } from "./helpers/client";
+import { getAdminClient, getTestClient } from "./helpers/client";
 import {
   addOpeningBalance,
   addMaklonIntake,
@@ -107,19 +107,31 @@ describe("Pembatalan setelah shipped & deteksi anomali harian", () => {
       userId,
     });
 
-    // Simulasi skenario "seharusnya mustahil": insert ledger langsung yang
-    // melewati guard fn_allocate_fefo (mis. race condition 2 request
-    // nyaris bersamaan). Ini SENGAJA insert manual buat nguji deteksinya,
-    // BUKAN pola yang boleh dipakai kode aplikasi (semua write asli tetap
-    // WAJIB lewat RPC).
-    await supabase.from("stock_ledger").insert({
+    const badRow = {
       batch_id: batchId,
       movement_type: "OUT_MANUAL",
       qty_delta: -10,
       channel: "internal",
       reason: "offline",
       created_by: userId,
-    });
+    };
+
+    // Sejak migration 0124, role authenticated (yang dipakai aplikasi) sudah
+    // TIDAK BISA menulis langsung ke stock_ledger -- semua tulisan wajib lewat
+    // RPC. Dicek eksplisit di sini supaya penguncian itu ikut terjaga oleh
+    // test: kalau suatu saat ada yang mengembalikan GRANT-nya, test ini gagal.
+    const blocked = await supabase.from("stock_ledger").insert(badRow);
+    expect(blocked.error).not.toBeNull();
+    expect(blocked.error!.code).toBe("42501"); // permission denied
+
+    // Simulasi skenario "seharusnya mustahil": baris ledger rusak yang melewati
+    // guard fn_allocate_fefo (mis. race condition 2 request nyaris bersamaan,
+    // atau intervensi manual di SQL Editor). Karena jalur aplikasi sudah
+    // tertutup rapat di atas, kondisi rusaknya dibuat lewat service-role --
+    // murni untuk menguji apakah DETEKSI anomalinya jalan.
+    const admin = getAdminClient();
+    const seeded = await admin.from("stock_ledger").insert(badRow);
+    expect(seeded.error).toBeNull();
 
     expect(await getProductBalance(supabase, product.id)).toBe(-5);
 

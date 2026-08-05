@@ -23,9 +23,11 @@ export async function GET(
     .eq("product_id", id);
   if (batchesError) return handleError(batchesError);
 
+  // Saldo per batch dari tabel cache, bukan view v_batch_stock (SUM
+  // full-scan seluruh ledger tiap panggil). Lihat 0125.
   const batchIds = (batches ?? []).map((b: any) => b.id);
   const { data: stock } = await supabase
-    .from("v_batch_stock")
+    .from("batch_stock_summary")
     .select("batch_id, current_qty")
     .in("batch_id", batchIds.length ? batchIds : ["00000000-0000-0000-0000-000000000000"]);
 

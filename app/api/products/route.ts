@@ -5,9 +5,13 @@ import { createProductSchema } from "@/lib/validators/product";
 export async function GET() {
   const supabase = await createClient();
 
+  // Saldo dibaca dari tabel cache (product_stock_summary), bukan dari
+  // view v_product_stock -- view itu menjumlah ulang SELURUH stock_ledger
+  // setiap dipanggil. Lihat 0125. Nama kolomnya sengaja sama persis, jadi
+  // bentuk datanya tidak berubah sama sekali untuk pemanggil endpoint ini.
   const [productsResult, stockResult] = await Promise.all([
     supabase.from("products").select("id, sku, name, is_bundle"),
-    supabase.from("v_product_stock").select("product_id, current_qty"),
+    supabase.from("product_stock_summary").select("product_id, current_qty"),
   ]);
 
   if (productsResult.error) return handleError(productsResult.error);

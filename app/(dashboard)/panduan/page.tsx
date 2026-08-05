@@ -102,7 +102,7 @@ export default function PanduanPage() {
                 <strong>Klik nama produk</strong> di tabel untuk buka detail, di sana ada daftar semua batch produk itu beserta stoknya, dan (khusus produk Bundle) form untuk atur <strong>resep</strong>: produk apa saja dan berapa jumlah yang membentuk 1 bundle. Kalau resep diubah, order lama yang sudah terjadi tidak ikut berubah, hanya order baru yang memakai resep terbaru.
               </li>
               <li>
-                Setiap batch bisa dicetak label QR-nya lewat halaman <strong>Ledger</strong>, buat ditempel di kardus gudang dan dipakai saat Stok Opname.
+                Setiap batch bisa dicetak label QR nya lewat halaman <strong>Ledger</strong>, buat ditempel di kardus gudang dan dipakai saat Stok Opname.
               </li>
             </ul>
           </CardContent>
@@ -155,7 +155,7 @@ export default function PanduanPage() {
               <li>
                 Setelah barang fisik sampai dan dicek gudang, klik <strong>Inspeksi</strong> dan tentukan kondisinya:
                 <ul className="list-circle pl-5 mt-2 space-y-1">
-                  <li><strong>Layak Jual</strong>: barang kembali normal, bisa dijual lagi. Wajib isi tanggal kedaluwarsa (dibaca dari kemasan fisik), karena barang ini dicatat sebagai <strong>batch baru terpisah</strong> (bertanda "RETUR-" atau "BATAL-"), bukan digabung ke batch asal, supaya alokasi FEFO tetap akurat.</li>
+                  <li><strong>Layak Jual</strong>: barang kembali normal, bisa dijual lagi. Wajib isi tanggal kedaluwarsa (dibaca dari kemasan fisik), karena barang ini dicatat sebagai <strong>batch baru terpisah</strong> (bertanda "RETUR" atau "BATAL"), bukan digabung ke batch asal, supaya alokasi FEFO tetap akurat.</li>
                   <li><strong>Rusak</strong> atau <strong>Hilang</strong>: barang tidak bisa dijual lagi. <strong>Wajib upload foto bukti</strong> sebelum bisa menyelesaikan inspeksi, berlaku untuk retur biasa maupun pembatalan pasca-kirim. Stok TIDAK ditambah lagi untuk kondisi ini (sudah terpotong sejak barang pertama kali dikirim), tapi tetap tercatat sebagai jejak audit.</li>
                 </ul>
               </li>

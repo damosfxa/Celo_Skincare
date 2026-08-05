@@ -13,16 +13,19 @@ describe("Koreksi Entri (fn_correct_ledger_entry)", () => {
     const { supabase, userId } = ctx;
     const product = await createTestProduct(supabase);
     const expiry = new Date(Date.now() + 60 * 86400000).toISOString().slice(0, 10);
-    await addMaklonIntake(supabase, { productId: product.id, qty: 50, expiryDate: expiry, userId });
+    const batchId = await addMaklonIntake(supabase, { productId: product.id, qty: 50, expiryDate: expiry, userId });
 
     expect(await getProductBalance(supabase, product.id)).toBe(50);
 
+    // Disaring per batch, BUKAN "IN_MAKLON paling baru" secara global -- file
+    // test jalan paralel, jadi entri paling baru bisa saja milik test lain
+    // yang kebetulan barusan memasukkan barang. Satu batch cuma punya satu
+    // entri IN_MAKLON, jadi ini deterministik.
     const { data: original } = await supabase
       .from("stock_ledger")
       .select("id")
       .eq("movement_type", "IN_MAKLON")
-      .order("created_at", { ascending: false })
-      .limit(1)
+      .eq("batch_id", batchId)
       .single();
 
     // Ternyata admin salah input, harusnya cuma 40, bukan 50 -- koreksi -10.
@@ -92,14 +95,13 @@ describe("Koreksi Entri (fn_correct_ledger_entry)", () => {
     const { supabase, userId } = ctx;
     const product = await createTestProduct(supabase);
     const expiry = new Date(Date.now() + 60 * 86400000).toISOString().slice(0, 10);
-    await addMaklonIntake(supabase, { productId: product.id, qty: 5, expiryDate: expiry, userId });
+    const batchId = await addMaklonIntake(supabase, { productId: product.id, qty: 5, expiryDate: expiry, userId });
 
     const { data: original } = await supabase
       .from("stock_ledger")
       .select("id")
       .eq("movement_type", "IN_MAKLON")
-      .order("created_at", { ascending: false })
-      .limit(1)
+      .eq("batch_id", batchId)
       .single();
 
     // Saldo cuma 5, coba koreksi -20 -- harus ditolak, bukan bikin stok minus.
@@ -118,14 +120,13 @@ describe("Koreksi Entri (fn_correct_ledger_entry)", () => {
     const { supabase, userId } = ctx;
     const product = await createTestProduct(supabase);
     const expiry = new Date(Date.now() + 60 * 86400000).toISOString().slice(0, 10);
-    await addMaklonIntake(supabase, { productId: product.id, qty: 10, expiryDate: expiry, userId });
+    const batchId = await addMaklonIntake(supabase, { productId: product.id, qty: 10, expiryDate: expiry, userId });
 
     const { data: original } = await supabase
       .from("stock_ledger")
       .select("id")
       .eq("movement_type", "IN_MAKLON")
-      .order("created_at", { ascending: false })
-      .limit(1)
+      .eq("batch_id", batchId)
       .single();
 
     const zeroDelta = await supabase.rpc("fn_correct_ledger_entry", {

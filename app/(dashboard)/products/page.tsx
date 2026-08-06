@@ -30,7 +30,7 @@ export default function ProductsPage() {
             Kelola daftar produk, stok saat ini, dan catat penerimaan barang maklon.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
           <OpeningBalanceForm />
           <IntakeBatchForm />
           <CreateProductForm />

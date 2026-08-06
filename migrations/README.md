@@ -41,10 +41,11 @@ Jalankan berurutan dari `0100` sampai nomor terbesar yang ada di folder ini. Per
 | 0124 | `lock_ledger_immutability.sql` | **Cabut hak tulis langsung** ke `stock_ledger`/`returns` dari role aplikasi + trigger penolak UPDATE/DELETE |
 | 0125 | `read_balance_from_cache.sql` | Alihkan baca saldo (jalur panas: FEFO, buka sesi opname, batch mendekati kedaluwarsa) dari SUM ke tabel cache O(1) |
 | 0126 | `security_hardening.sql` | **Perbaikan keamanan (audit 2026-08-06)**: hapus 2 policy `public` siluman yang membocorkan saldo cache ke anon (drift, tak pernah tercatat di migration), + `SET search_path` untuk 4 fungsi non-SECURITY-DEFINER (bersihkan warning advisor) |
+| 0127 | `add_performance_indexes.sql` | Index performa untuk kolom filter/sort/join yang belum terindeks (`stock_ledger.batch_id`/`created_at`/`reference`, FK, `orders.status`, `returns.condition`). Murni percepat query saat data membesar, tidak menyentuh data/logika/hak akses |
 
 Ada juga file-file tak bernomor (`cleanup-*`, `diagnostic-*`, `backfill-*`), itu skrip operasional sekali-pakai (bersih-bersih data QA, verifikasi manual, audit keamanan), bukan bagian dari urutan migration skema.
 
-Catatan urutan aman untuk database yang SUDAH BERJALAN (beda dengan rebuild "dari nol" di atas): `0123`–`0125` menyentuh hak akses & jalur tulis, jadi jalankan berurutan satu per satu sambil menguji aplikasi di antaranya, jangan sekaligus. `0123` dulu (memberi hak RPC), tes aplikasi, baru `0124` (mencabut hak tulis langsung), tes lagi, baru `0125` (alihkan baca saldo ke cache). `0126` (hardening keamanan) aman dijalankan langsung karena hanya mencabut policy publik + menambah `search_path`.
+Catatan urutan aman untuk database yang SUDAH BERJALAN (beda dengan rebuild "dari nol" di atas): `0123`–`0125` menyentuh hak akses & jalur tulis, jadi jalankan berurutan satu per satu sambil menguji aplikasi di antaranya, jangan sekaligus. `0123` dulu (memberi hak RPC), tes aplikasi, baru `0124` (mencabut hak tulis langsung), tes lagi, baru `0125` (alihkan baca saldo ke cache). `0126` (hardening keamanan) aman dijalankan langsung karena hanya mencabut policy publik + menambah `search_path`. `0127` (index performa) juga aman dijalankan langsung kapan saja, hanya menambah index (tidak menyentuh data/logika/hak akses); di database yang sudah sangat besar, jalankan tiap `CREATE INDEX` sebagai `CONCURRENTLY` di luar transaksi (lihat catatan di dalam file).
 
 ## Yang sudah ditegakkan di level database (bukan cuma konvensi kode)
 

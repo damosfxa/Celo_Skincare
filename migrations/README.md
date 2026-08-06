@@ -40,6 +40,7 @@ Jalankan berurutan dari `0100` sampai nomor terbesar yang ada di folder ini. Per
 | 0123 | `harden_ledger_write_path.sql` | CHECK constraint kolom `channel` + `SECURITY DEFINER` untuk 7 RPC penulis ledger |
 | 0124 | `lock_ledger_immutability.sql` | **Cabut hak tulis langsung** ke `stock_ledger`/`returns` dari role aplikasi + trigger penolak UPDATE/DELETE |
 | 0125 | `read_balance_from_cache.sql` | Alihkan baca saldo (jalur panas: FEFO, buka sesi opname, batch mendekati kedaluwarsa) dari SUM ke tabel cache O(1) |
+| 0126 | `security_hardening.sql` | **Perbaikan keamanan (audit 2026-08-06)**: hapus 2 policy `public` siluman yang membocorkan saldo cache ke anon (drift, tak pernah tercatat di migration), + `SET search_path` untuk 4 fungsi non-SECURITY-DEFINER (bersihkan warning advisor) |
 
 Ada juga file-file tak bernomor (`cleanup-*`, `diagnostic-*`, `backfill-*`), itu skrip operasional sekali-pakai (bersih-bersih data QA, verifikasi manual), bukan bagian dari urutan migration skema. Lihat `CATATAN-KERJA-AUDIT-2026-08-05.md` untuk konteks audit terakhir dan urutan menjalankan `0123`–`0125` dengan aman di database yang sudah berjalan (beda dengan "dari nol" di sini, kalau databasenya sudah ada isinya, jalankan `0123` dulu, tes, baru `0124`, tes lagi, baru `0125`).
 
@@ -51,6 +52,7 @@ Ada juga file-file tak bernomor (`cleanup-*`, `diagnostic-*`, `backfill-*`), itu
 - `stock_ledger.campaign_reference`: CHECK constraint wajib-isi untuk reason bonus/promo/sample (`0108`).
 - `returns.condition`/`photo_url`: hanya bisa diubah lewat `fn_inspect_return` sejak `0124` (UPDATE langsung dicabut dari role aplikasi).
 - `opname_items.variance`: `GENERATED` column, tidak bisa salah isi (`0115`).
-- RLS seluruh tabel dibatasi ke role `authenticated` saja, publik ditolak total (`0121`), termasuk lewat view (`0122`).
+- RLS seluruh tabel dibatasi ke role `authenticated` saja, publik ditolak total (`0121` + `0126`), termasuk lewat view (`0122`). Diverifikasi menyeluruh 2026-08-06 lewat `diagnostic-security-audit-2026-08-06.sql` (langsung ke database live): 13 tabel RLS aktif, semua policy `authenticated`-only, semua view `security_invoker`, semua fungsi punya `search_path`. `0126` menutup 2 policy `public` siluman pada tabel cache yang lolos dari `0121` karena ditambahkan manual di luar migration (drift).
+- Bucket Storage `return-photos`: upload dibatasi `authenticated`, tanpa policy UPDATE/DELETE (foto tak bisa dihapus/ditimpa lewat API), baca-publik lewat URL ber-UUID acak. Tradeoff yang disengaja untuk foto bukti retur; ubah ke privat butuh signed URL + perubahan frontend.
 
 Kalau ada CHECK constraint lain yang ternyata belum tertangkap di file-file ini, tambahkan manual setelah verifikasi (lihat pola `0120`/`0123` untuk cara aman: cek dulu data lama sebelum menambah constraint).

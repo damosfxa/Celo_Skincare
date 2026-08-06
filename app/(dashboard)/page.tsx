@@ -170,7 +170,7 @@ export default function DashboardPage() {
               Hal-hal yang butuh perhatian, diurutkan dari yang paling mendesak.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-3 max-h-[28rem] overflow-y-auto pr-1">
             {data.worklist.length === 0 ? (
               <div className="text-center p-8 border border-dashed rounded-md text-muted-foreground">
                 <p className="font-medium text-foreground">Semua Aman</p>
@@ -228,6 +228,9 @@ export default function DashboardPage() {
                       <p className="font-medium truncate">{m.product_name}</p>
                       <p className="text-xs text-muted-foreground truncate">
                         {m.movement_type.replace(/_/g, " ")} · {m.batch_code}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground/70 truncate mt-0.5">
+                        {new Date(m.created_at).toLocaleString("id-ID", { day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit" })}
                       </p>
                     </div>
                     <div

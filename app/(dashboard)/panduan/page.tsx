@@ -179,7 +179,7 @@ export default function PanduanPage() {
         </Card>
 
         {/* Modul 5: Stok Opname */}
-        <Card>
+        <Card id="opname" className="scroll-mt-24">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ScanBarcode className="h-5 w-5 text-primary" />
@@ -205,7 +205,7 @@ export default function PanduanPage() {
         </Card>
 
         {/* Modul 6: Simulasi */}
-        <Card>
+        <Card id="simulasi" className="scroll-mt-24">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Beaker className="h-5 w-5 text-primary" />

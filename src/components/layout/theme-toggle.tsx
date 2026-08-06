@@ -18,11 +18,23 @@ export function ThemeToggle() {
 
   const isDark = theme === "dark";
 
+  const handleToggle = () => {
+    const root = document.documentElement;
+    // Nyalakan transisi warna tepat sebelum tema diganti...
+    root.classList.add("theme-transition");
+    setTheme(isDark ? "light" : "dark");
+    // ...lalu matikan lagi setelah transisi selesai (sedikit lebih
+    // lama dari 300ms supaya animasi benar-benar tuntas dulu).
+    window.setTimeout(() => {
+      root.classList.remove("theme-transition");
+    }, 320);
+  };
+
   return (
     <Button
       variant="ghost"
       size="icon"
-      onClick={() => setTheme(isDark ? "light" : "dark")}
+      onClick={handleToggle}
       title={isDark ? "Ganti ke mode terang" : "Ganti ke mode gelap"}
     >
       {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

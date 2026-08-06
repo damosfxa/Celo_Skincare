@@ -120,14 +120,38 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
-    transition-property: background-color, border-color, color, fill, stroke;
-    transition-timing-function: ease;
-    transition-duration: 300ms;
   }
   body {
     @apply bg-background text-foreground;
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* Transisi warna yang HANYA aktif selama perpindahan tema.
+   Class .theme-transition ditambahkan ke <html> sesaat oleh tombol
+   toggle (lihat theme-toggle.tsx), lalu dilepas lagi setelah 300ms.
+   !important sengaja dipakai supaya menimpa durasi bawaan tiap
+   komponen shadcn (duration-100/150/200), jadi semua elemen berubah
+   warna seragam, tidak ada yang telat. Karena cuma aktif saat ganti
+   tema, ini tidak mengganggu animasi hover/focus di waktu lain. */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition-property: background-color, border-color, color, fill, stroke !important;
+  transition-duration: 300ms !important;
+  transition-timing-function: ease !important;
+  transition-delay: 0ms !important;
+}
+
+/* Hormati pengguna yang mematikan animasi di setelan perangkatnya. */
+@media (prefers-reduced-motion: reduce) {
+  .theme-transition,
+  .theme-transition *,
+  .theme-transition *::before,
+  .theme-transition *::after {
+    transition-duration: 0ms !important;
   }
 }

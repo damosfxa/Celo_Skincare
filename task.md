@@ -313,6 +313,16 @@ Disengaja. Tidak ada satu pun dari 7 RPC yang melakukan UPDATE/DELETE ke `stock_
 
 Sync Update: *"Export CSV worklist/laporan = boleh, nice-to-have, bukan penentu nilai."* Tidak ada kewajiban melengkapinya di halaman lain.
 
+### 7. Transisi tema pakai View Transitions API, JANGAN dibalik ke CSS transition biasa
+
+`src/components/layout/theme-toggle.tsx` memakai `document.startViewTransition()` + `flushSync(() => setTheme(...))`, dan `app/globals.css` punya blok `::view-transition-old/new(root)`. Ini **hasil 4 ronde iterasi** (2026-08-06) untuk menghilangkan glitch/delay perpindahan mode gelap-terang.
+
+Kalau ada yang tergoda "menyederhanakan" toggle jadi `onClick={() => setTheme(...)}` biasa, JANGAN, itu mengembalikan bug yang sudah susah payah dibereskan:
+- Pendekatan CSS transition di selektor `*` (ronde 1-3) glitch di halaman padat karena menganimasikan `background-color` ratusan elemen sekaligus (frame drop di HP) + durasi bawaan komponen shadcn bertabrakan.
+- View Transitions meng-crossfade seluruh halaman sebagai satu lapisan komposit, jauh lebih ringan. Terverifikasi mulus di HP pemilik project.
+- `flushSync` wajib di dalam callback `startViewTransition` supaya next-themes menerapkan perubahan DOM sinkron dan browser menangkap snapshot "sesudah" dengan benar. Tanpa itu, transisi tidak menangkap perubahan tema.
+- `setMounted(true)` langsung di `useEffect` (bukan `setTimeout(0)`) itu juga disengaja, menghindari jeda mount di halaman baru.
+
 ---
 
 ## SEBELUM SUBMISSION, daftar periksa terakhir

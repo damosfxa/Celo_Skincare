@@ -24,12 +24,22 @@ export async function POST(
     .neq("variance", 0);
 
   // Batch yang gak sempat dihitung sama sekali -- perlu ditunjukin ke
-  // operator, bukan didiemin kayak sebelumnya.
+  // operator. Ambil KODE BATCH-nya (bukan objek/UUID mentah) supaya
+  // notifikasi di frontend bisa langsung menampilkan kode yang terbaca
+  // (mis. "MK-2026-0001"), bukan "[object Object]".
   const { data: notCounted } = await supabase
     .from("opname_items")
-    .select("batch_id")
+    .select("product_batches(batch_code)")
     .eq("session_id", id)
     .is("physical_qty", null);
 
-  return ok({ session_id: id, status: "CLOSED", corrections, not_counted: notCounted });
+  // opname_items -> product_batches many-to-one: PostgREST mengembalikan
+  // objek tunggal, tapi klien tanpa tipe skema menebaknya array, jadi
+  // bentuknya ditimpa manual (pola yang sama dipakai di dashboard/today).
+  type NotCountedRow = { product_batches: { batch_code: string } | null };
+  const notCountedCodes = ((notCounted as unknown as NotCountedRow[]) ?? [])
+    .map((row) => row.product_batches?.batch_code)
+    .filter((code): code is string => Boolean(code));
+
+  return ok({ session_id: id, status: "CLOSED", corrections, not_counted: notCountedCodes });
 }

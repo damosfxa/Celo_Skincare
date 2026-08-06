@@ -81,7 +81,7 @@ export function IntakeBatchForm() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger render={<Button variant="secondary" className="w-full sm:w-auto" />}>Barang Masuk (Maklon)</SheetTrigger>
+      <SheetTrigger render={<Button variant="secondary" className="w-full lg:w-auto" />}>Barang Masuk (Maklon)</SheetTrigger>
       <SheetContent>
         <SheetHeader>
           <SheetTitle>Penerimaan Barang Maklon</SheetTitle>

@@ -75,7 +75,7 @@ export function CreateProductForm() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger render={<Button className="w-full sm:w-auto" />}>Tambah Produk</SheetTrigger>
+      <SheetTrigger render={<Button className="w-full lg:w-auto" />}>Tambah Produk</SheetTrigger>
       <SheetContent>
         <SheetHeader>
           <SheetTitle>Tambah Produk Baru</SheetTitle>

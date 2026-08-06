@@ -81,7 +81,7 @@ export function OpeningBalanceForm() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger render={<Button variant="outline" className="w-full sm:w-auto" />}>Input Stok Awal (Opening Balance)</SheetTrigger>
+      <SheetTrigger render={<Button variant="outline" className="w-full lg:w-auto" />}>Input Stok Awal (Opening Balance)</SheetTrigger>
       <SheetContent>
         <SheetHeader>
           <SheetTitle>Input Stok Awal (Opening Balance)</SheetTitle>

@@ -23,14 +23,14 @@ export default function ProductsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Produk & Batch</h2>
           <p className="text-muted-foreground mt-1">
             Kelola daftar produk, stok saat ini, dan catat penerimaan barang maklon.
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-2 lg:flex-shrink-0">
           <OpeningBalanceForm />
           <IntakeBatchForm />
           <CreateProductForm />

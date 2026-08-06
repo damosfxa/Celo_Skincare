@@ -1,10 +1,10 @@
-# Workflow — Alur Proses Bisnis Utama
+# Workflow, Alur Proses Bisnis Utama
 
 Dokumen ini menjelaskan alur bisnis inti sistem lewat diagram. Untuk detail teknis (schema, API), lihat `database-schema.md` dan `README.md`.
 
-## Flow 1 — Kapan Stok Benar-Benar Berkurang
+## Flow 1: Kapan Stok Benar-Benar Berkurang
 
-Prinsip dari brief: order masuk hanyalah **reservasi**, bukan pergerakan stok. Stok baru benar-benar terpotong saat barang secara fisik meninggalkan gudang — titik ini beda tiap channel (Shopee saat `SHIPPED`, TikTok saat `IN_TRANSIT`).
+Prinsip dari brief: order masuk hanyalah **reservasi**, bukan pergerakan stok. Stok baru benar-benar terpotong saat barang secara fisik meninggalkan gudang. Titik ini beda tiap channel (Shopee saat `SHIPPED`, TikTok saat `IN_TRANSIT`).
 
 ```mermaid
 flowchart TD
@@ -13,11 +13,11 @@ flowchart TD
     B -->|Shipped / in_transit| D["Alokasi FEFO otomatis<br/>Ledger: OUT_SALE_MARKETPLACE"]
 ```
 
-**Kenapa dibedakan begini:** kalau order batal sebelum shipped, stok memang belum pernah tersentuh — jadi tidak ada apa pun yang perlu "dikembalikan" ke ledger. Ini mencegah bug klasik: menulis ledger keluar untuk reservasi yang batal, lalu bingung kenapa stok kurang padahal barang tidak pernah keluar gudang.
+**Kenapa dibedakan begini:** kalau order batal sebelum shipped, stok memang belum pernah tersentuh, jadi tidak ada apa pun yang perlu "dikembalikan" ke ledger. Ini mencegah bug klasik: menulis ledger keluar untuk reservasi yang batal, lalu bingung kenapa stok kurang padahal barang tidak pernah keluar gudang.
 
-## Flow 2 — Retur, Kondisi Barang
+## Flow 2: Retur, Kondisi Barang
 
-Kondisi retur diputuskan manual oleh gudang setelah barang fisik diinspeksi — bukan otomatis dari marketplace, karena hanya gudang yang bisa memastikan kondisi barang yang benar-benar diterima.
+Kondisi retur diputuskan manual oleh gudang setelah barang fisik diinspeksi, bukan otomatis dari marketplace, karena hanya gudang yang bisa memastikan kondisi barang yang benar-benar diterima.
 
 ```mermaid
 flowchart TD
@@ -26,9 +26,9 @@ flowchart TD
     B -->|Rusak / hilang| D["Tanpa ledger baru<br/>Foto bukti WAJIB diupload"]
 ```
 
-**Kenapa kondisi Rusak/Hilang tidak menulis ledger baru:** stok untuk barang ini sudah terpotong sejak awal pengiriman (lihat Flow 1). Menulis ledger keluar lagi di titik ini akan menghitung barang yang sama dua kali sebagai kerugian (*double-count*). Foto wajib berfungsi sebagai bukti audit — kenapa barang ini tidak kembali ke stok jual.
+**Kenapa kondisi Rusak/Hilang tidak menulis ledger baru:** stok untuk barang ini sudah terpotong sejak awal pengiriman (lihat Flow 1). Menulis ledger keluar lagi di titik ini akan menghitung barang yang sama dua kali sebagai kerugian (*double-count*). Foto wajib berfungsi sebagai bukti audit: kenapa barang ini tidak kembali ke stok jual.
 
-## Flow 3 — Stok Opname (Rekonsiliasi Fisik)
+## Flow 3: Stok Opname (Rekonsiliasi Fisik)
 
 ```mermaid
 flowchart TD
@@ -42,4 +42,4 @@ flowchart TD
     F -->|Tidak| H["Tidak ada ledger baru<br/>Stok sudah sesuai catatan"]
 ```
 
-**Kenapa sesi tetap bisa ditutup walau ada batch belum dihitung:** operasional gudang sering tidak sempat menghitung 100% batch dalam satu sesi. Sistem tidak memaksa — batch yang belum dihitung tetap tercatat statusnya (bukan diam-diam diabaikan), sehingga terlihat jelas mana yang perlu opname susulan.
+**Kenapa sesi tetap bisa ditutup walau ada batch belum dihitung:** operasional gudang sering tidak sempat menghitung 100% batch dalam satu sesi. Sistem tidak memaksa, batch yang belum dihitung tetap tercatat statusnya (bukan diam-diam diabaikan), sehingga terlihat jelas mana yang perlu opname susulan.

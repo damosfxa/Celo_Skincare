@@ -90,7 +90,7 @@ export default function LoginPage() {
             </Label>
             <Input
               id="email"
-              placeholder="admin@celobeaute.com"
+              placeholder="nama@email.com"
               disabled={isLoading}
               className="border-[#EBD7DF] bg-[#FBF3F6] dark:bg-[#FBF3F6] text-[#3D2A32] placeholder:text-[#B79AA6] focus-visible:ring-[#C7527A]"
               {...form.register("email")}

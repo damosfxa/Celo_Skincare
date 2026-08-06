@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# catatan kerja internal (lokal saja, tidak untuk repo submission)
+/_notes/

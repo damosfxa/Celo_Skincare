@@ -42,7 +42,9 @@ Jalankan berurutan dari `0100` sampai nomor terbesar yang ada di folder ini. Per
 | 0125 | `read_balance_from_cache.sql` | Alihkan baca saldo (jalur panas: FEFO, buka sesi opname, batch mendekati kedaluwarsa) dari SUM ke tabel cache O(1) |
 | 0126 | `security_hardening.sql` | **Perbaikan keamanan (audit 2026-08-06)**: hapus 2 policy `public` siluman yang membocorkan saldo cache ke anon (drift, tak pernah tercatat di migration), + `SET search_path` untuk 4 fungsi non-SECURITY-DEFINER (bersihkan warning advisor) |
 
-Ada juga file-file tak bernomor (`cleanup-*`, `diagnostic-*`, `backfill-*`), itu skrip operasional sekali-pakai (bersih-bersih data QA, verifikasi manual), bukan bagian dari urutan migration skema. Lihat `CATATAN-KERJA-AUDIT-2026-08-05.md` untuk konteks audit terakhir dan urutan menjalankan `0123`–`0125` dengan aman di database yang sudah berjalan (beda dengan "dari nol" di sini, kalau databasenya sudah ada isinya, jalankan `0123` dulu, tes, baru `0124`, tes lagi, baru `0125`).
+Ada juga file-file tak bernomor (`cleanup-*`, `diagnostic-*`, `backfill-*`), itu skrip operasional sekali-pakai (bersih-bersih data QA, verifikasi manual, audit keamanan), bukan bagian dari urutan migration skema.
+
+Catatan urutan aman untuk database yang SUDAH BERJALAN (beda dengan rebuild "dari nol" di atas): `0123`–`0125` menyentuh hak akses & jalur tulis, jadi jalankan berurutan satu per satu sambil menguji aplikasi di antaranya, jangan sekaligus. `0123` dulu (memberi hak RPC), tes aplikasi, baru `0124` (mencabut hak tulis langsung), tes lagi, baru `0125` (alihkan baca saldo ke cache). `0126` (hardening keamanan) aman dijalankan langsung karena hanya mencabut policy publik + menambah `search_path`.
 
 ## Yang sudah ditegakkan di level database (bukan cuma konvensi kode)
 

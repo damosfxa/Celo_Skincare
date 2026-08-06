@@ -1,3 +1,31 @@
+# Desain ulang halaman login: Opsi C (blush terang, elegan)
+
+**Untuk:** Gemini (Antigravity)
+**Dibuat:** 2026-08-06 oleh Claude Code. Pemilik project sudah memilih arah desain "Opsi C" dari mockup perbandingan.
+
+Jangan ubah logika login/autentikasi sama sekali. Yang berubah HANYA tampilan (wrapper + styling + logo). Form schema, `useForm`, `onSubmit`, `signInWithPassword`, validasi, toggle show/hide password, dan state loading harus tetap persis seperti sekarang.
+
+---
+
+## Arah desain yang dipilih
+
+Latar pink blush lembut (seperti warna asli logo), kartu putih bersih di tengah, kesan skincare yang anggun. Logo asli Celo Beaute di atas kartu, nama brand tipis ber-spasi, tombol rose.
+
+## Keputusan penting: login sengaja SELALU terang, tidak ikut tema gelap
+
+Aplikasi default-nya gelap, tapi halaman login ini sengaja dibuat committed ke tampilan blush terang (tidak ikut mode gelap). Alasannya: (1) tombol ganti tema memang tidak ada di halaman login, cuma di dashboard; (2) pemilik project memilih tampilan terang ini sebagai "wajah" brand sebelum masuk sistem. Karena `<html>` punya class `.dark` global (dari next-themes defaultTheme dark), komponen shadcn `Input` akan mewarisi token gelap, jadi **warna input WAJIB di-override eksplisit** ke terang (sudah ada di kode di bawah), jangan biarkan pakai token tema.
+
+## Logo
+
+Pakai file asli yang sudah ada: `public/logo-celo-beaute.jpg`. Tampilkan lewat `next/image` sebagai lingkaran (`rounded-full`), sama pendekatan seperti di sidebar. Logo aslinya berlatar pink, jadi bentuk lingkaran justru pas dengan estetika blush ini.
+
+---
+
+## Kode utuh, ganti seluruh isi `app/login/page.tsx` dengan ini
+
+Semua bagian logika (baris `formSchema`, `useForm`, `onSubmit`, `register`, error, `isLoading`, `showPassword`) sama persis dengan versi sekarang, cuma JSX + styling yang diganti dan `next/image` ditambahkan.
+
+```tsx
 "use client";
 
 import { useState } from "react";
@@ -92,7 +120,7 @@ export default function LoginPage() {
               id="email"
               placeholder="admin@celobeaute.com"
               disabled={isLoading}
-              className="border-[#EBD7DF] bg-[#FBF3F6] dark:bg-[#FBF3F6] text-[#3D2A32] placeholder:text-[#B79AA6] focus-visible:ring-[#C7527A]"
+              className="border-[#EBD7DF] bg-[#FBF3F6] text-[#3D2A32] placeholder:text-[#B79AA6] focus-visible:ring-[#C7527A]"
               {...form.register("email")}
             />
             {form.formState.errors.email && (
@@ -112,7 +140,7 @@ export default function LoginPage() {
                 type={showPassword ? "text" : "password"}
                 placeholder="••••••••"
                 disabled={isLoading}
-                className="border-[#EBD7DF] bg-[#FBF3F6] dark:bg-[#FBF3F6] text-[#3D2A32] placeholder:text-[#B79AA6] focus-visible:ring-[#C7527A]"
+                className="border-[#EBD7DF] bg-[#FBF3F6] text-[#3D2A32] placeholder:text-[#B79AA6] focus-visible:ring-[#C7527A]"
                 {...form.register("password")}
               />
               <Button
@@ -160,3 +188,28 @@ export default function LoginPage() {
     </div>
   );
 }
+```
+
+---
+
+## Catatan implementasi
+
+- `CardTitle`/`CardDescription`/`Card...` yang lama tidak dipakai lagi di sini (diganti div biasa supaya bebas mengatur warna terang), jadi import-nya dihapus. Pastikan tidak ada import yang tidak terpakai (biar tidak nambah warning lint).
+- Warna brand kunci: latar `#FBEAF0`→`#F6DBE5`, kartu putih, wordmark `#6E2942`, tombol `#C7527A`, input `#FBF3F6` border `#EBD7DF`. Kalau mau disetel lebih terang/gelap tinggal ubah hex-nya.
+- Logo dipakai `rounded-full` ukuran 64px. Kalau ternyata logo aslinya kurang pas dibulatkan (misal ada teks "CELO" yang kepotong di lingkaran), boleh diganti `rounded-2xl` (kotak sudut tumpul) sebagai alternatif, cek mana yang paling rapi.
+
+## Setelah selesai
+
+```
+npm run lint
+```
+
+```
+npm run build
+```
+
+```
+npm test
+```
+
+Laporkan hasil sebenarnya. Untuk halaman login ini, cukup dicek visualnya sekilas (ini bukan alur data penting, dan logikanya tidak disentuh), tapi tetap pastikan: (1) bisa login beneran dengan kredensial yang benar, (2) pesan error muncul kalau email/password salah format, (3) tombol mata show/hide password jalan.

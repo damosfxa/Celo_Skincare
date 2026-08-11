@@ -64,6 +64,13 @@ export async function POST(request: Request) {
   }
 
   const created: string[] = [];
+  // Detail lengkap tiap order yang BENERAN baru dibuat (bukan skipped/error) --
+  // dipakai frontend buat nampilin order hasil impor di tabel "Daftar Pesanan
+  // Simulasi" (sebelum ini gak ada, jadi order hasil impor CSV gak pernah
+  // muncul di UI sama sekali walau udah kesimpen di database -- lihat catatan
+  // di app/(dashboard)/simulation/page.tsx). Dibikin array terpisah (bukan
+  // ganti bentuk `order_ids` yang udah ada) supaya nol resiko ke konsumen lain.
+  const createdOrders: { id: string; channel: string; external_order_id: string; ordered_at: string }[] = [];
   const skipped: { external_order_id: string }[] = [];
   const errors: { external_order_id: string; message: string }[] = [];
 
@@ -110,6 +117,12 @@ export async function POST(request: Request) {
         skipped.push({ external_order_id: externalOrderId });
       } else {
         created.push(order.id);
+        createdOrders.push({
+          id: order.id,
+          channel: first.channel,
+          external_order_id: externalOrderId,
+          ordered_at: first.ordered_at,
+        });
       }
     } catch (error) {
       errors.push({
@@ -125,7 +138,7 @@ export async function POST(request: Request) {
   }
 
   return ok(
-    { created: created.length, order_ids: created, skipped, failed: errors },
+    { created: created.length, order_ids: created, created_orders: createdOrders, skipped, failed: errors },
     201
   );
 }

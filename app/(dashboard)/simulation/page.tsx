@@ -85,6 +85,16 @@ export default function SimulationPage() {
       
       const payload = json.data;
       setImportResult({ created: payload.created || 0, failed: payload.failed || [] });
+      
+      if (payload.created_orders && payload.created_orders.length > 0) {
+        const newOrders = payload.created_orders.map((o: { id: string; channel: string }) => ({
+          id: o.id,
+          status: 'PENDING',
+          channel: o.channel,
+          created_at: new Date().toISOString(),
+        }));
+        setOrders(prev => [...newOrders, ...prev]);
+      }
       if (payload.created > 0) {
         toast.success(`${payload.created} pesanan berhasil diimpor`);
       } else {

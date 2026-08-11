@@ -6,6 +6,13 @@ export const createProductSchema = z.object({
   is_bundle: z.boolean().default(false),
 });
 
+// Cuma boleh ubah label (nama/SKU) -- bukan is_bundle atau apa pun yang
+// menyangkut logika stok. Dipakai untuk membetulkan salah ketik admin.
+export const updateProductSchema = z.object({
+  sku: z.string().min(1, "SKU wajib diisi"),
+  name: z.string().min(1, "Nama produk wajib diisi"),
+});
+
 export const batchIntakeSchema = z.object({
   product_id: z.string().uuid("product_id harus UUID valid"),
   batch_code: z.string().min(1, "Kode batch wajib diisi"),

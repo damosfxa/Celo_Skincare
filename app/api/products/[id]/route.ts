@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { ok, fail, handleError } from "@/lib/api-response";
+import { updateProductSchema } from "@/lib/validators/product";
 
 // Klien Supabase di project ini sengaja tidak diberi tipe skema hasil-generate,
 // jadi hasil query datang longgar. Bentuk baris yang benar-benar di-select
@@ -79,4 +80,89 @@ export async function GET(
   }
 
   return ok({ ...product, batches: batchesWithStock, recipe });
+}
+
+// Betulkan salah ketik nama/SKU. Aman untuk produk APA PUN (baru atau
+// sudah punya riwayat) -- ini cuma ganti label, tidak menyentuh
+// product_batches/stock_ledger sama sekali. Beda dari DELETE di bawah,
+// yang cuma boleh untuk produk tanpa riwayat.
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const body = await request.json();
+  const parsed = updateProductSchema.safeParse(body);
+  if (!parsed.success) {
+    return fail("VALIDATION_ERROR", parsed.error.issues[0].message, 422);
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("products")
+    .update(parsed.data)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    // Unique constraint products_sku_key -- SKU baru sudah dipakai produk lain.
+    if (error.code === "23505") {
+      return fail("DUPLICATE_SKU", `SKU "${parsed.data.sku}" sudah dipakai produk lain`, 409);
+    }
+    return handleError(error);
+  }
+  if (!data) return fail("NOT_FOUND", "Produk tidak ditemukan", 404);
+
+  return ok(data);
+}
+
+// Hapus produk -- HANYA kalau belum punya riwayat sama sekali (nol batch,
+// nol order_items). Begitu ada satu saja riwayat, penghapusan ditolak di
+// sini SEBELUM sempat menyentuh database sungguhan -- lapis kedua yang
+// selalu menahan walau ada bug di pengecekan ini: batch dengan baris
+// stock_ledger tidak akan pernah bisa dihapus (FK dari stock_ledger.batch_id),
+// dan stock_ledger sendiri dikunci total sejak migration 0124. Jadi
+// endpoint ini murni kemudahan operator untuk kasus "baru salah input,
+// belum kejadian apa-apa" -- bukan jalan pintas menghapus riwayat.
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  const { count: batchCount, error: batchError } = await supabase
+    .from("product_batches")
+    .select("id", { count: "exact", head: true })
+    .eq("product_id", id);
+  if (batchError) return handleError(batchError);
+
+  const { count: orderItemCount, error: orderItemError } = await supabase
+    .from("order_items")
+    .select("id", { count: "exact", head: true })
+    .eq("product_id", id);
+  if (orderItemError) return handleError(orderItemError);
+
+  if ((batchCount ?? 0) > 0 || (orderItemCount ?? 0) > 0) {
+    return fail(
+      "HAS_HISTORY",
+      "Produk ini sudah punya riwayat stok/pesanan, tidak bisa dihapus. Anda bisa ubah nama/SKU-nya lewat tombol Edit.",
+      409
+    );
+  }
+
+  // Bersihkan resep bundle yang nyangkut produk ini (sebagai bundle ATAU
+  // komponen) sebelum hapus produknya sendiri -- pola sama seperti
+  // migrations/cleanup-*-DELETE.sql.
+  const { error: recipeError } = await supabase
+    .from("bundle_recipes")
+    .delete()
+    .or(`bundle_product_id.eq.${id},component_product_id.eq.${id}`);
+  if (recipeError) return handleError(recipeError);
+
+  const { error: deleteError } = await supabase.from("products").delete().eq("id", id);
+  if (deleteError) return handleError(deleteError);
+
+  return ok({ id, deleted: true });
 }

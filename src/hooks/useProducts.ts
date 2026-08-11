@@ -74,3 +74,21 @@ export async function submitBundleRecipe(productId: string, components: { compon
   if (!json.success) throw new Error(json.error?.message || 'Gagal menyimpan resep bundle');
   return json.data;
 }
+
+export async function updateProduct(id: string, sku: string, name: string) {
+  const res = await fetch(`/api/products/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sku, name }),
+  });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error?.message || 'Gagal memperbarui produk');
+  return json.data;
+}
+
+export async function deleteProduct(id: string) {
+  const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+  const json = await res.json();
+  if (!json.success) throw new Error(json.error?.message || 'Gagal menghapus produk');
+  return json.data;
+}

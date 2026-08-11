@@ -6,10 +6,11 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { ArrowLeft, Layers, Loader2, Package, Plus, Trash2, Save } from "lucide-react";
+import { ArrowLeft, Layers, Loader2, Package, Plus, Trash2, Save, Pencil } from "lucide-react";
 
-import { useProducts, useProductDetail, submitBundleRecipe } from "@/hooks/useProducts";
+import { useProducts, useProductDetail, submitBundleRecipe, updateProduct, deleteProduct } from "@/hooks/useProducts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +36,12 @@ export default function ProductDetailPage() {
   const { product, isLoading, isError, mutate } = useProductDetail(productId);
   const { products: allProducts } = useProducts();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editSku, setEditSku] = useState("");
+  const [editName, setEditName] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form for bundle recipe
   const form = useForm<RecipeFormValues>({
@@ -68,7 +75,7 @@ export default function ProductDetailPage() {
         }
       }
     }
-  }, [product, form]);
+  }, [product, form, fields.length]);
 
   const onSubmit = async (values: RecipeFormValues) => {
     setIsSubmitting(true);
@@ -80,6 +87,40 @@ export default function ProductDetailPage() {
       toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!editSku || !editName) {
+      toast.error("SKU dan Nama Produk harus diisi");
+      return;
+    }
+    setIsUpdating(true);
+    try {
+      await updateProduct(productId, editSku, editName);
+      toast.success("Produk berhasil diperbarui!");
+      setIsEditDialogOpen(false);
+      mutate();
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (product && product.batches && product.batches.length > 0) return;
+    
+    if (confirm("Hapus produk ini? Tindakan ini tidak bisa dibatalkan.")) {
+      setIsDeleting(true);
+      try {
+        await deleteProduct(productId);
+        toast.success("Produk berhasil dihapus!");
+        router.push("/products");
+      } catch (error: unknown) {
+        toast.error(error instanceof Error ? error.message : String(error));
+        setIsDeleting(false);
+      }
     }
   };
 
@@ -139,8 +180,68 @@ export default function ProductDetailPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-1 border-primary/20 shadow-sm bg-card/50">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-start justify-between space-y-0">
             <CardTitle>Informasi Dasar</CardTitle>
+            <div className="flex flex-col gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                onClick={() => {
+                  setEditSku(product?.sku || "");
+                  setEditName(product?.name || "");
+                  setIsEditDialogOpen(true);
+                }}
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Edit Produk</DialogTitle>
+                    <DialogDescription>
+                      Ubah informasi SKU atau Nama Produk.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="sku">SKU</Label>
+                      <Input 
+                        id="sku" 
+                        value={editSku} 
+                        onChange={(e) => setEditSku(e.target.value)} 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Nama Produk</Label>
+                      <Input 
+                        id="name" 
+                        value={editName} 
+                        onChange={(e) => setEditName(e.target.value)} 
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} disabled={isUpdating}>Batal</Button>
+                    <Button onClick={handleUpdate} disabled={isUpdating}>
+                      {isUpdating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                      Simpan Perubahan
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                disabled={product.batches && product.batches.length > 0}
+                title={product.batches && product.batches.length > 0 ? "Produk sudah punya riwayat batch, tidak bisa dihapus" : "Hapus Produk"}
+                onClick={handleDelete}
+              >
+                {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>

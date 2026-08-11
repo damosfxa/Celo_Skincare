@@ -26,7 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Loader2, Box, Eye, Image as ImageIcon } from "lucide-react";
+import { Loader2, Box, Eye, Image as ImageIcon, Download } from "lucide-react";
 import { toast } from "sonner";
 
 const inspectSchema = z.object({
@@ -141,6 +141,44 @@ export default function ReturnsPage() {
     });
   };
 
+  const handleExportCsv = () => {
+    if (!returns || returns.length === 0) {
+      toast.error("Tidak ada data untuk diekspor");
+      return;
+    }
+
+    const headers = ["Order ID", "Tipe", "Produk", "SKU", "Channel", "Qty", "Kondisi", "Tanggal Diajukan", "Batas Klaim"];
+    
+    const rows = returns.map((item) => {
+      const orderId = item.order_id || "-";
+      const type = item.type === 'CANCELLATION' ? 'Pembatalan' : 'Retur';
+      const productName = item.product_name || "-";
+      const sku = item.product_sku || "-";
+      const channel = item.channel || "-";
+      const qty = item.qty !== undefined ? item.qty : 1;
+      const condition = item.condition === 'PENDING_INSPECTION' ? 'Menunggu Inspeksi' : 
+                        item.condition === 'SELLABLE' ? 'Layak Jual (Kembali ke Stok)' :
+                        item.condition === 'DAMAGED' ? 'Rusak (Write-off)' :
+                        item.condition === 'LOST' ? 'Hilang di Kurir' : (item.condition || "-");
+      const submittedDate = formatDate(item.created_at);
+      const deadline = formatDate(item.claim_deadline || "");
+
+      return [orderId, type, productName, sku, channel, qty, condition, submittedDate, deadline].join(";");
+    });
+
+    const csvString = [headers.join(";"), ...rows].join("\n");
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.setAttribute("download", `retur_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -153,11 +191,16 @@ export default function ReturnsPage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Daftar Antrean Retur</CardTitle>
-          <CardDescription>
-            Inspeksi barang retur untuk menentukan apakah kembali ke stok (SELLABLE) atau dihapus (WRITE_OFF).
-          </CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
+          <div className="space-y-1.5">
+            <CardTitle>Daftar Antrean Retur</CardTitle>
+            <CardDescription>
+              Inspeksi barang retur untuk menentukan apakah kembali ke stok (SELLABLE) atau dihapus (WRITE_OFF).
+            </CardDescription>
+          </div>
+          <Button onClick={handleExportCsv} variant="outline" size="sm" className="h-8">
+            <Download className="w-4 h-4 mr-2" /> Export CSV
+          </Button>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -181,6 +224,7 @@ export default function ReturnsPage() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Order ID</TableHead>
+                    <TableHead>Produk</TableHead>
                     <TableHead>Channel</TableHead>
                     <TableHead>Tanggal Diajukan</TableHead>
                     <TableHead>Batas Klaim</TableHead>
@@ -201,6 +245,10 @@ export default function ReturnsPage() {
                             {item.type === 'CANCELLATION' ? 'Pembatalan' : 'Retur'}
                           </Badge>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium text-sm">{item.product_name || "-"}</div>
+                        <div className="text-xs text-muted-foreground">{item.product_sku || "-"}</div>
                       </TableCell>
                       <TableCell className="capitalize">{item.channel}</TableCell>
                       <TableCell className="text-sm">{formatDate(item.created_at)}</TableCell>
@@ -258,8 +306,9 @@ export default function ReturnsPage() {
         <SheetContent>
           <SheetHeader>
             <SheetTitle>Inspeksi Barang Retur</SheetTitle>
-            <SheetDescription>
-              Order ID: <span className="font-mono text-foreground">{selectedReturn?.order_id}</span>
+            <SheetDescription className="space-y-1 pt-1">
+              <div>Order ID: <span className="font-mono text-foreground">{selectedReturn?.order_id}</span></div>
+              <div>Produk: <span className="text-foreground">{selectedReturn?.product_name || "-"}</span> <span className="text-xs">({selectedReturn?.product_sku || "-"})</span></div>
             </SheetDescription>
           </SheetHeader>
           <div className="mt-6">

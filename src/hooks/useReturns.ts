@@ -21,6 +21,9 @@ export type ReturnItem = {
   created_at: string;
   claim_deadline?: string;
   photo_url?: string;
+  product_name?: string;
+  product_sku?: string;
+  qty?: number;
 };
 
 export function useReturns() {

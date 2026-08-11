@@ -21,6 +21,7 @@ type ReturnRow = {
   inspected_at: string | null;
   created_at: string;
   orders: { channel: string } | null;
+  order_items: { products: { sku: string; name: string } | null } | null;
 };
 
 export async function GET(request: Request) {
@@ -32,7 +33,7 @@ export async function GET(request: Request) {
   let query = supabase
     .from("returns")
     .select(
-      "id, order_id, order_item_id, qty, condition, type, photo_url, claim_deadline, inspected_by, inspected_at, created_at, orders(channel)"
+      "id, order_id, order_item_id, qty, condition, type, photo_url, claim_deadline, inspected_by, inspected_at, created_at, orders(channel), order_items(products(sku, name))"
     )
     .order("created_at", { ascending: false });
 
@@ -42,8 +43,13 @@ export async function GET(request: Request) {
   if (error) return handleError(error);
 
   const flattened = ((data as unknown as ReturnRow[]) ?? []).map((r) => {
-    const { orders, ...rest } = r;
-    return { ...rest, channel: orders?.channel ?? null };
+    const { orders, order_items, ...rest } = r;
+    return {
+      ...rest,
+      channel: orders?.channel ?? null,
+      product_sku: order_items?.products?.sku ?? null,
+      product_name: order_items?.products?.name ?? null,
+    };
   });
 
   const filtered = channel

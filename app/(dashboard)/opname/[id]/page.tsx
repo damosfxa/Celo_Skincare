@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, ScanBarcode, Lock, ArrowLeft, Send } from "lucide-react";
+import { Loader2, ScanBarcode, Lock, ArrowLeft, Send, Download } from "lucide-react";
 import { toast } from "sonner";
 
 const formSchema = z.object({
@@ -136,6 +136,38 @@ export default function OpnameSessionDetail() {
       toast.error(error instanceof Error ? error.message : String(error));
       setIsClosing(false);
     }
+  };
+
+  const handleExportCsv = () => {
+    if (!session?.items || session.items.length === 0) {
+      toast.error("Tidak ada data untuk diekspor");
+      return;
+    }
+
+    const headers = ["Batch Code", "SKU", "Nama Produk", "Qty Sistem", "Qty Fisik", "Selisih"];
+    
+    const rows = session.items.map((item) => {
+      const batchCode = item.product_batches?.batch_code || item.batch_id;
+      const sku = item.product_batches?.products?.sku || "-";
+      const name = item.product_batches?.products?.name || "-";
+      const sysQty = item.system_qty ?? "-";
+      const physQty = item.physical_qty === null ? "Belum dihitung" : item.physical_qty;
+      const variance = item.variance === undefined ? "-" : item.variance;
+
+      return [batchCode, sku, name, sysQty, physQty, variance].join(";");
+    });
+
+    const csvString = [headers.join(";"), ...rows].join("\n");
+    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    const dateStr = new Date().toISOString().slice(0, 10);
+    link.setAttribute("download", `opname_${sessionId}_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   if (isLoadingSession) {
@@ -278,11 +310,16 @@ export default function OpnameSessionDetail() {
       )}
 
       <Card>
-        <CardHeader>
-          <CardTitle>Riwayat Item Discan</CardTitle>
-          <CardDescription>
-            {isSessionOpen ? "Item yang sudah tercatat pada sesi ini." : "Hasil akhir stok opname untuk sesi ini."}
-          </CardDescription>
+        <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
+          <div className="space-y-1.5">
+            <CardTitle>Riwayat Item Discan</CardTitle>
+            <CardDescription>
+              {isSessionOpen ? "Item yang sudah tercatat pada sesi ini." : "Hasil akhir stok opname untuk sesi ini."}
+            </CardDescription>
+          </div>
+          <Button onClick={handleExportCsv} variant="outline" size="sm" className="h-8">
+            <Download className="w-4 h-4 mr-2" /> Export CSV
+          </Button>
         </CardHeader>
         <CardContent>
           {!session.items || session.items.length === 0 ? (

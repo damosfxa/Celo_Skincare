@@ -75,7 +75,7 @@ export default function ProductDetailPage() {
         }
       }
     }
-  }, [product, form, fields.length]);
+  }, [product, form]);
 
   const onSubmit = async (values: RecipeFormValues) => {
     setIsSubmitting(true);

@@ -229,7 +229,13 @@ export default function LedgerPage() {
                   onValueChange={(value) => setSelectedProductId(value as string)}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Pilih Produk" />
+                    <SelectValue placeholder="Pilih Produk">
+                      {(value: string | null) => {
+                        if (!value) return "Pilih Produk";
+                        const p = products.find((pr) => pr.id === value);
+                        return p ? `${p.sku} - ${p.name}` : value;
+                      }}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {products.map((p) => (
@@ -258,7 +264,9 @@ export default function LedgerPage() {
                         onValueChange={(value) => setFilterMovementType(value as string)}
                       >
                         <SelectTrigger className="w-full h-9">
-                          <SelectValue placeholder="Tipe Mutasi" />
+                          <SelectValue placeholder="Tipe Mutasi">
+                            {(value: string | null) => (!value || value === "all" ? "Semua" : value.replace(/_/g, " "))}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Semua</SelectItem>
@@ -276,7 +284,9 @@ export default function LedgerPage() {
                         onValueChange={(value) => setFilterReason(value as string)}
                       >
                         <SelectTrigger className="w-full h-9">
-                          <SelectValue placeholder="Alasan (Manual)" />
+                          <SelectValue placeholder="Alasan (Manual)">
+                            {(value: string | null) => (!value || value === "all" ? "Semua" : value.replace(/_/g, " "))}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Semua</SelectItem>
@@ -294,7 +304,9 @@ export default function LedgerPage() {
                         onValueChange={(value) => setFilterChannel(value as string)}
                       >
                         <SelectTrigger className="w-full h-9">
-                          <SelectValue placeholder="Channel" />
+                          <SelectValue placeholder="Channel">
+                            {(value: string | null) => (!value || value === "all" ? "Semua" : value)}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">Semua</SelectItem>

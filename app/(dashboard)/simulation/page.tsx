@@ -285,7 +285,11 @@ export default function SimulationPage() {
                 disabled={isGenerating}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Pilih Channel" />
+                  <SelectValue placeholder="Pilih Channel">
+                    {(value: string | null) =>
+                      value === "shopee" ? "Shopee" : value === "tiktok" ? "TikTok Shop" : "Pilih Channel"
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="shopee">Shopee</SelectItem>
@@ -302,7 +306,9 @@ export default function SimulationPage() {
                 disabled={isGenerating}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Pilih Jumlah" />
+                  <SelectValue placeholder="Pilih Jumlah">
+                    {(value: string | null) => (value ? `${value} Order${value !== "1" ? "s" : ""}` : "Pilih Jumlah")}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="1">1 Order</SelectItem>
@@ -338,7 +344,13 @@ export default function SimulationPage() {
                   disabled={isManualOutLoading}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Pilih Produk" />
+                    <SelectValue placeholder="Pilih Produk">
+                      {(value: string | null) => {
+                        if (!value) return "Pilih Produk";
+                        const p = products.find((pr) => pr.id === value);
+                        return p ? `${p.sku} - ${p.name}` : value;
+                      }}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {products.filter(p => !p.is_bundle && p.current_qty > 0).map((p) => (
@@ -352,23 +364,33 @@ export default function SimulationPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="manualOutReason">Tipe Mutasi</Label>
-                <Select
-                  value={manualOutReason}
-                  onValueChange={(value) => setManualOutReason(value as string)}
-                  disabled={isManualOutLoading}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Pilih Tipe Mutasi" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="offline">Penjualan Offline</SelectItem>
-                    <SelectItem value="bonus">Bonus</SelectItem>
-                    <SelectItem value="promo">Promo</SelectItem>
-                    <SelectItem value="sample">Sample</SelectItem>
-                    <SelectItem value="damaged">Barang Rusak</SelectItem>
-                    <SelectItem value="expired">Barang Kedaluwarsa</SelectItem>
-                  </SelectContent>
-                </Select>
+                {(() => {
+                  const REASON_LABELS: Record<string, string> = {
+                    offline: "Penjualan Offline", bonus: "Bonus", promo: "Promo",
+                    sample: "Sample", damaged: "Barang Rusak", expired: "Barang Kedaluwarsa",
+                  };
+                  return (
+                    <Select
+                      value={manualOutReason}
+                      onValueChange={(value) => setManualOutReason(value as string)}
+                      disabled={isManualOutLoading}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Pilih Tipe Mutasi">
+                          {(value: string | null) => (value ? REASON_LABELS[value] ?? value : "Pilih Tipe Mutasi")}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="offline">Penjualan Offline</SelectItem>
+                        <SelectItem value="bonus">Bonus</SelectItem>
+                        <SelectItem value="promo">Promo</SelectItem>
+                        <SelectItem value="sample">Sample</SelectItem>
+                        <SelectItem value="damaged">Barang Rusak</SelectItem>
+                        <SelectItem value="expired">Barang Kedaluwarsa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  );
+                })()}
               </div>
 
               {["bonus", "promo", "sample"].includes(manualOutReason) && (

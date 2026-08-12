@@ -138,7 +138,13 @@ export function BundleRecipeModal({ productId, isOpen, onClose }: BundleRecipeMo
                         onValueChange={(value) => form.setValue(`components.${index}.component_product_id`, value as string, { shouldValidate: true })}
                       >
                         <SelectTrigger className="w-full bg-background">
-                          <SelectValue placeholder="Pilih Produk Fisik" />
+                          <SelectValue placeholder="Pilih Produk Fisik">
+                            {(value: string | null) => {
+                              if (!value) return "Pilih Produk Fisik";
+                              const p = physicalProducts.find((pr) => pr.id === value);
+                              return p ? `${p.sku} - ${p.name}` : value;
+                            }}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {physicalProducts.map(p => (

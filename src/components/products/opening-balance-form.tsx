@@ -103,7 +103,13 @@ export function OpeningBalanceForm() {
                 onValueChange={(value) => form.setValue("product_id", value as string, { shouldValidate: true })}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Pilih Produk" />
+                  <SelectValue placeholder="Pilih Produk">
+                    {(value: string | null) => {
+                      if (!value) return "Pilih Produk";
+                      const p = regularProducts.find((pr) => pr.id === value);
+                      return p ? `${p.sku} - ${p.name}` : value;
+                    }}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {regularProducts.map(p => (

@@ -124,7 +124,11 @@ export function CreateProductForm() {
                 onValueChange={(value) => form.setValue("is_bundle", value as "false" | "true", { shouldValidate: true })}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Pilih Tipe Produk" />
+                  <SelectValue placeholder="Pilih Tipe Produk">
+                    {(value: string | null) =>
+                      value === "true" ? "Bundle (Paket)" : value === "false" ? "Reguler (Fisik)" : "Pilih Tipe Produk"
+                    }
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="false">Reguler (Fisik)</SelectItem>

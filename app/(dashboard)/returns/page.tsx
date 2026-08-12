@@ -322,7 +322,14 @@ export default function ReturnsPage() {
                   onValueChange={(value) => form.setValue("condition", value as "SELLABLE" | "DAMAGED" | "LOST", { shouldValidate: true })}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Pilih Kondisi" />
+                    <SelectValue placeholder="Pilih Kondisi">
+                      {(value: string | null) => {
+                        if (value === "SELLABLE") return "Layak Jual (Kembali ke Stok)";
+                        if (value === "DAMAGED") return "Rusak (Write-off)";
+                        if (value === "LOST") return "Hilang di Kurir (Write-off / Klaim)";
+                        return "Pilih Kondisi";
+                      }}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="SELLABLE">Layak Jual (Kembali ke Stok)</SelectItem>

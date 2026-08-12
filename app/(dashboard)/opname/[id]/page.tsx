@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, ScanBarcode, Lock, ArrowLeft, Send, Download } from "lucide-react";
 import { toast } from "sonner";
 
@@ -32,6 +33,7 @@ export default function OpnameSessionDetail() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [showDiscrepancyReason, setShowDiscrepancyReason] = useState(false);
+  const [isCloseConfirmOpen, setIsCloseConfirmOpen] = useState(false);
 
   const isSessionOpen = session?.status === "OPEN";
 
@@ -118,26 +120,7 @@ export default function OpnameSessionDetail() {
     }, 100);
   };
 
-  const handleCloseSession = async () => {
-    if (!confirm("Tutup sesi ini? Setelah ditutup, selisih stok akan langsung direkonsiliasi dan tidak bisa diubah.")) {
-      return;
-    }
-    
-    setIsClosing(true);
-    try {
-      const result = await closeOpnameSession(sessionId);
-      if (result?.not_counted && result.not_counted.length > 0) {
-        toast.warning(`Sesi ditutup, tapi batch ini tidak terhitung: ${result.not_counted.join(", ")}`, { duration: 8000 });
-      } else {
-        toast.success("Sesi opname ditutup. Rekonsiliasi selesai.");
-      }
-      mutate();
-      router.push("/opname");
-    } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : String(error));
-      setIsClosing(false);
-    }
-  };
+
 
   const handleExportCsv = () => {
     if (!session?.items || session.items.length === 0) {
@@ -208,10 +191,52 @@ export default function OpnameSessionDetail() {
           </div>
         </div>
         {isSessionOpen && (
-          <Button variant="destructive" onClick={handleCloseSession} disabled={isClosing}>
-            {isClosing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lock className="mr-2 h-4 w-4" />}
-            Tutup Sesi
-          </Button>
+          <>
+            <Button variant="destructive" onClick={() => setIsCloseConfirmOpen(true)} disabled={isClosing}>
+              {isClosing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lock className="mr-2 h-4 w-4" />}
+              Tutup Sesi
+            </Button>
+
+            <Dialog open={isCloseConfirmOpen} onOpenChange={setIsCloseConfirmOpen}>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Tutup Sesi Opname</DialogTitle>
+                  <DialogDescription>
+                    Tutup sesi ini? Setelah ditutup, selisih stok akan langsung direkonsiliasi dan tidak bisa diubah.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsCloseConfirmOpen(false)} disabled={isClosing}>
+                    Batal
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    disabled={isClosing}
+                    onClick={async () => {
+                      setIsCloseConfirmOpen(false);
+                      setIsClosing(true);
+                      try {
+                        const result = await closeOpnameSession(sessionId);
+                        if (result?.not_counted && result.not_counted.length > 0) {
+                          toast.warning(`Sesi ditutup, tapi batch ini tidak terhitung: ${result.not_counted.join(", ")}`, { duration: 8000 });
+                        } else {
+                          toast.success("Sesi opname ditutup. Rekonsiliasi selesai.");
+                        }
+                        mutate();
+                        router.push("/opname");
+                      } catch (error: unknown) {
+                        toast.error(error instanceof Error ? error.message : String(error));
+                        setIsClosing(false);
+                      }
+                    }}
+                  >
+                    {isClosing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    Ya, Tutup Sesi
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </>
         )}
       </div>
 
@@ -271,8 +296,12 @@ export default function OpnameSessionDetail() {
                 )}
               </div>
 
-              {/* KOLOM BARU: Alasan Selisih */}
-              {showDiscrepancyReason && (
+              {showDiscrepancyReason && (() => {
+                const DISCREPANCY_LABELS: Record<string, string> = {
+                  damaged: "Barang Rusak", lost: "Barang Hilang", found_extra: "Ditemukan Lebih",
+                  miscount_previous: "Salah Hitung Sebelumnya", other: "Lainnya",
+                };
+                return (
                 <div className="w-full sm:w-48 space-y-2">
                   <Label htmlFor="discrepancy_reason">Alasan Selisih</Label>
                   <Select
@@ -281,7 +310,9 @@ export default function OpnameSessionDetail() {
                     onValueChange={(value) => form.setValue("discrepancy_reason", value as string, { shouldValidate: true })}
                   >
                     <SelectTrigger className="w-full h-[72px]" id="discrepancy_reason">
-                      <SelectValue placeholder="Pilih Alasan" />
+                      <SelectValue placeholder="Pilih Alasan">
+                        {(value: string | null) => (value ? DISCREPANCY_LABELS[value] ?? value : "Pilih Alasan")}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="damaged">Barang Rusak</SelectItem>
@@ -297,7 +328,8 @@ export default function OpnameSessionDetail() {
                     </p>
                   )}
                 </div>
-              )}
+                );
+              })()}
 
               <div className="w-full sm:w-auto pt-2 sm:pt-8">
                 <Button type="submit" disabled={isSubmitting || isClosing} className="w-full h-[72px] px-6">

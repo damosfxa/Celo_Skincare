@@ -43,6 +43,7 @@ export default function ProductDetailPage() {
   const [editName, setEditName] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   // Form for bundle recipe
   const form = useForm<RecipeFormValues>({
@@ -109,21 +110,7 @@ export default function ProductDetailPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (product && product.batches && product.batches.length > 0) return;
-    
-    if (confirm("Hapus produk ini? Tindakan ini tidak bisa dibatalkan.")) {
-      setIsDeleting(true);
-      try {
-        await deleteProduct(productId);
-        toast.success("Produk berhasil dihapus!");
-        router.push("/products");
-      } catch (error: unknown) {
-        toast.error(error instanceof Error ? error.message : String(error));
-        setIsDeleting(false);
-      }
-    }
-  };
+
 
   const nonBundleProducts = allProducts?.filter(p => !p.is_bundle) || [];
 
@@ -238,10 +225,45 @@ export default function ProductDetailPage() {
                 className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
                 disabled={product.batches && product.batches.length > 0}
                 title={product.batches && product.batches.length > 0 ? "Produk sudah punya riwayat batch, tidak bisa dihapus" : "Hapus Produk"}
-                onClick={handleDelete}
+                onClick={() => setIsDeleteConfirmOpen(true)}
               >
                 {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
               </Button>
+
+              <Dialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Hapus Produk</DialogTitle>
+                    <DialogDescription>
+                      Hapus produk ini? Tindakan ini tidak bisa dibatalkan.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsDeleteConfirmOpen(false)} disabled={isDeleting}>
+                      Batal
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      disabled={isDeleting}
+                      onClick={async () => {
+                        setIsDeleteConfirmOpen(false);
+                        setIsDeleting(true);
+                        try {
+                          await deleteProduct(productId);
+                          toast.success("Produk berhasil dihapus!");
+                          router.push("/products");
+                        } catch (error: unknown) {
+                          toast.error(error instanceof Error ? error.message : String(error));
+                          setIsDeleting(false);
+                        }
+                      }}
+                    >
+                      {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      Ya, Hapus
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -328,7 +350,13 @@ export default function ProductDetailPage() {
                         onValueChange={(value) => form.setValue(`components.${index}.component_product_id`, value as string, { shouldValidate: true })}
                       >
                         <SelectTrigger className="w-full bg-background" id={`components.${index}.component_product_id`}>
-                          <SelectValue placeholder="Pilih produk..." />
+                          <SelectValue placeholder="Pilih produk...">
+                            {(value: string | null) => {
+                              if (!value) return "Pilih produk...";
+                              const p = nonBundleProducts.find((pr) => pr.id === value);
+                              return p ? `${p.sku} - ${p.name}` : value;
+                            }}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           {nonBundleProducts.map((p) => (

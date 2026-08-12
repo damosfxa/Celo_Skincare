@@ -56,10 +56,18 @@ export async function GET(
   // dibuka lagi untuk diedit.
   let recipe: RecipeWithComponent[] = [];
   if (product.is_bundle) {
+    // Cuma ambil versi yang lagi AKTIF -- resep di-versioning (0112),
+    // versi lama ditandai is_active=false tapi barisnya tetap ada di
+    // tabel (biar order lama tetap bisa ditelusuri pakai resep versi
+    // saat itu). Tanpa filter ini, form edit numpuk SEMUA versi lama
+    // tiap kali resep disimpan ulang -- baris makin banyak tiap edit,
+    // padahal jalur yang beneran motong stok (src/lib/services/orders.ts)
+    // dari awal sudah benar cuma baca versi aktif.
     const { data: recipeRows, error: recipeError } = await supabase
       .from("bundle_recipes")
       .select("component_product_id, qty_per_bundle")
-      .eq("bundle_product_id", id);
+      .eq("bundle_product_id", id)
+      .eq("is_active", true);
     if (recipeError) return handleError(recipeError);
 
     const recipeList = (recipeRows as RecipeRow[]) ?? [];

@@ -11,6 +11,7 @@ import { useProductDetail, useProducts, submitBundleRecipe } from "@/hooks/usePr
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -131,18 +132,22 @@ export function BundleRecipeModal({ productId, isOpen, onClose }: BundleRecipeMo
                   <div key={field.id} className="flex gap-3 items-start p-3 border rounded-md bg-muted/20">
                     <div className="flex-1 space-y-2">
                       <Label className="text-xs text-muted-foreground">Produk</Label>
-                      <select
+                      <Select
                         disabled={isSubmitting}
-                        className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        {...form.register(`components.${index}.component_product_id`)}
+                        value={form.watch(`components.${index}.component_product_id`)}
+                        onValueChange={(value) => form.setValue(`components.${index}.component_product_id`, value as string, { shouldValidate: true })}
                       >
-                        <option value="">Pilih Produk Fisik</option>
-                        {physicalProducts.map(p => (
-                          <option key={p.id} value={p.id}>
-                            {p.sku} - {p.name}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="w-full bg-background">
+                          <SelectValue placeholder="Pilih Produk Fisik" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {physicalProducts.map(p => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.sku} - {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       {form.formState.errors.components?.[index]?.component_product_id && (
                         <p className="text-xs text-destructive">
                           {form.formState.errors.components[index]?.component_product_id?.message}

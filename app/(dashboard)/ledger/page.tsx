@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useProducts } from "@/hooks/useProducts";
 import { useReconciliationDrilldown, useDailyAnomalies, correctLedgerEntry, LedgerEntry } from "@/hooks/useLedger";
 import { QrGeneratorModal } from "@/components/products/qr-generator-modal";
@@ -12,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -20,7 +22,8 @@ import { Loader2, AlertTriangle, ArrowDownRight, ArrowUpRight, Edit, Download } 
 export default function LedgerPage() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") === "anomalies" ? "anomalies" : "drilldown";
-  const [selectedProductId, setSelectedProductId] = useState<string>("");
+  const initialProduct = searchParams.get("product") || "";
+  const [selectedProductId, setSelectedProductId] = useState<string>(initialProduct);
 
   // States untuk Filter
   const [filterMovementType, setFilterMovementType] = useState<string>("all");
@@ -221,18 +224,21 @@ export default function LedgerPage() {
             </CardHeader>
             <CardContent>
               <div className="mb-6 max-w-sm">
-                <select
+                <Select
                   value={selectedProductId}
-                  onChange={(e) => setSelectedProductId(e.target.value)}
-                  className="flex h-10 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                  onValueChange={(value) => setSelectedProductId(value as string)}
                 >
-                  <option value="" className="bg-background">Pilih Produk</option>
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id} className="bg-background">
-                      {p.sku} - {p.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Pilih Produk" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.sku} - {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {selectedProductId && !isLoadingDrilldown && drilldownData && (
@@ -247,45 +253,57 @@ export default function LedgerPage() {
                   <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div className="space-y-1.5">
                       <Label className="text-xs">Tipe Mutasi</Label>
-                      <select
+                      <Select
                         value={filterMovementType}
-                        onChange={(e) => setFilterMovementType(e.target.value)}
-                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        onValueChange={(value) => setFilterMovementType(value as string)}
                       >
-                        <option value="all">Semua</option>
-                        {uniqueMovementTypes.map(type => (
-                          <option key={type} value={type}>{type.replace(/_/g, " ")}</option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="w-full h-9">
+                          <SelectValue placeholder="Tipe Mutasi" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Semua</SelectItem>
+                          {uniqueMovementTypes.map(type => (
+                            <SelectItem key={type} value={type}>{type.replace(/_/g, " ")}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div className="space-y-1.5">
                       <Label className="text-xs">Alasan (Manual)</Label>
-                      <select
+                      <Select
                         value={filterReason}
-                        onChange={(e) => setFilterReason(e.target.value)}
-                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        onValueChange={(value) => setFilterReason(value as string)}
                       >
-                        <option value="all">Semua</option>
-                        {uniqueReasons.map(reason => (
-                          <option key={reason} value={reason} className="capitalize">{reason.replace(/_/g, " ")}</option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="w-full h-9">
+                          <SelectValue placeholder="Alasan (Manual)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Semua</SelectItem>
+                          {uniqueReasons.map(reason => (
+                            <SelectItem key={reason} value={reason} className="capitalize">{reason.replace(/_/g, " ")}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     
                     <div className="space-y-1.5">
                       <Label className="text-xs">Channel</Label>
-                      <select
+                      <Select
                         value={filterChannel}
-                        onChange={(e) => setFilterChannel(e.target.value)}
-                        className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        onValueChange={(value) => setFilterChannel(value as string)}
                       >
-                        <option value="all">Semua</option>
-                        <option value="Shopee">Shopee</option>
-                        <option value="TikTok">TikTok</option>
-                        <option value="Offline">Offline</option>
-                        <option value="Internal">Internal</option>
-                      </select>
+                        <SelectTrigger className="w-full h-9">
+                          <SelectValue placeholder="Channel" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Semua</SelectItem>
+                          <SelectItem value="Shopee">Shopee</SelectItem>
+                          <SelectItem value="TikTok">TikTok</SelectItem>
+                          <SelectItem value="Offline">Offline</SelectItem>
+                          <SelectItem value="Internal">Internal</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     
                     <div className="space-y-1.5">
@@ -472,6 +490,7 @@ export default function LedgerPage() {
                       <TableRow>
                         <TableHead>Prioritas</TableHead>
                         <TableHead>Terdeteksi</TableHead>
+                        <TableHead>Produk</TableHead>
                         <TableHead>Channel & No. Order</TableHead>
                         <TableHead>Jenis Anomali</TableHead>
                         <TableHead className="text-right">Qty Nyangkut</TableHead>
@@ -489,6 +508,21 @@ export default function LedgerPage() {
                             </Badge>
                           </TableCell>
                           <TableCell>{formatDate(anom.detected_at)}</TableCell>
+                          <TableCell>
+                            {anom.affected_products && anom.affected_products.length > 0 ? (
+                              <div className="flex flex-wrap gap-1">
+                                {anom.affected_products.map((p) => (
+                                  <Link key={p.id} href={`/ledger?tab=drilldown&product=${p.id}`}>
+                                    <Badge variant="secondary" className="cursor-pointer hover:bg-secondary/80 text-[10px]">
+                                      {p.name}
+                                    </Badge>
+                                  </Link>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
                           <TableCell className="text-xs">
                             {anom.channel ? `${anom.channel} · ${anom.external_order_id}` : '-'}
                           </TableCell>

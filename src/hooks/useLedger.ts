@@ -55,6 +55,7 @@ export type DailyAnomaly = {
   external_order_id: string;
   detected_at: string;
   affected_product_ids: string[];
+  affected_products?: { id: string; sku: string; name: string }[];
   leaked_qty: number;
   priority_level: 'HIGH' | 'MEDIUM' | 'LOW';
 };

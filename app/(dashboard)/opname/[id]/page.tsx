@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, ScanBarcode, Lock, ArrowLeft, Send, Download } from "lucide-react";
 import { toast } from "sonner";
@@ -274,19 +275,22 @@ export default function OpnameSessionDetail() {
               {showDiscrepancyReason && (
                 <div className="w-full sm:w-48 space-y-2">
                   <Label htmlFor="discrepancy_reason">Alasan Selisih</Label>
-                  <select
-                    id="discrepancy_reason"
+                  <Select
                     disabled={isSubmitting || isClosing}
-                    {...form.register("discrepancy_reason")}
-                    className="flex h-[72px] w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    value={form.watch("discrepancy_reason")}
+                    onValueChange={(value) => form.setValue("discrepancy_reason", value as string, { shouldValidate: true })}
                   >
-                    <option value="" disabled>Pilih Alasan</option>
-                    <option value="damaged">Barang Rusak</option>
-                    <option value="lost">Barang Hilang</option>
-                    <option value="found_extra">Ditemukan Lebih</option>
-                    <option value="miscount_previous">Salah Hitung Sebelumnya</option>
-                    <option value="other">Lainnya</option>
-                  </select>
+                    <SelectTrigger className="w-full h-[72px]" id="discrepancy_reason">
+                      <SelectValue placeholder="Pilih Alasan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="damaged">Barang Rusak</SelectItem>
+                      <SelectItem value="lost">Barang Hilang</SelectItem>
+                      <SelectItem value="found_extra">Ditemukan Lebih</SelectItem>
+                      <SelectItem value="miscount_previous">Salah Hitung Sebelumnya</SelectItem>
+                      <SelectItem value="other">Lainnya</SelectItem>
+                    </SelectContent>
+                  </Select>
                   {form.formState.errors.discrepancy_reason && (
                     <p className="text-sm font-medium text-destructive leading-tight">
                       {form.formState.errors.discrepancy_reason.message}

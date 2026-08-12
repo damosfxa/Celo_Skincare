@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -117,15 +118,19 @@ export function CreateProductForm() {
 
             <div className="space-y-2">
               <Label htmlFor="is_bundle">Tipe Produk</Label>
-              <select
-                id="is_bundle"
+              <Select
                 disabled={isLoading}
-                className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                {...form.register("is_bundle")}
+                value={form.watch("is_bundle")}
+                onValueChange={(value) => form.setValue("is_bundle", value as "false" | "true", { shouldValidate: true })}
               >
-                <option value="false" className="bg-background">Reguler (Fisik)</option>
-                <option value="true" className="bg-background">Bundle (Paket)</option>
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Pilih Tipe Produk" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="false">Reguler (Fisik)</SelectItem>
+                  <SelectItem value="true">Bundle (Paket)</SelectItem>
+                </SelectContent>
+              </Select>
               {form.formState.errors.is_bundle && (
                 <p className="text-sm font-medium text-destructive">
                   {form.formState.errors.is_bundle.message}

@@ -114,8 +114,12 @@ export async function PATCH(
     .single();
 
   if (error) {
-    // Unique constraint products_sku_key -- SKU baru sudah dipakai produk lain.
+    // 23505 = unique constraint. Bedakan SKU (products_sku_key) vs nama
+    // (products_name_unique_ci, 0130) dari nama constraint di pesan error.
     if (error.code === "23505") {
+      if (error.message.includes("products_name_unique_ci")) {
+        return fail("DUPLICATE_NAME", `Nama produk "${parsed.data.name}" sudah dipakai produk lain`, 409);
+      }
       return fail("DUPLICATE_SKU", `SKU "${parsed.data.sku}" sudah dipakai produk lain`, 409);
     }
     return handleError(error);

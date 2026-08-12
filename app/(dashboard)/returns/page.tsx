@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
 import {
   Sheet,
@@ -315,16 +316,20 @@ export default function ReturnsPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="condition">Kondisi Barang</Label>
-                <select
-                  id="condition"
+                <Select
                   disabled={isSubmitting}
-                  className="flex h-10 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                  {...form.register("condition")}
+                  value={form.watch("condition")}
+                  onValueChange={(value) => form.setValue("condition", value as "SELLABLE" | "DAMAGED" | "LOST", { shouldValidate: true })}
                 >
-                  <option value="SELLABLE" className="bg-background">Layak Jual (Kembali ke Stok)</option>
-                  <option value="DAMAGED" className="bg-background">Rusak (Write-off)</option>
-                  <option value="LOST" className="bg-background">Hilang di Kurir (Write-off / Klaim)</option>
-                </select>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Pilih Kondisi" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="SELLABLE">Layak Jual (Kembali ke Stok)</SelectItem>
+                    <SelectItem value="DAMAGED">Rusak (Write-off)</SelectItem>
+                    <SelectItem value="LOST">Hilang di Kurir (Write-off / Klaim)</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {condition === "SELLABLE" && (

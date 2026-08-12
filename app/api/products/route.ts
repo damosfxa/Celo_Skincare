@@ -48,6 +48,18 @@ export async function POST(request: Request) {
     .select()
     .single();
 
-  if (error) return handleError(error);
+  if (error) {
+    // 23505 = unique constraint. Ada 2 kemungkinan (SKU atau nama, lihat
+    // 0100 & 0130) -- bedakan dari nama constraint-nya di pesan error
+    // Postgres, supaya operator dikasih tahu persis mana yang bentrok,
+    // bukan pesan mentah "duplicate key value violates...".
+    if (error.code === "23505") {
+      if (error.message.includes("products_name_unique_ci")) {
+        return fail("DUPLICATE_NAME", `Nama produk "${parsed.data.name}" sudah dipakai produk lain`, 409);
+      }
+      return fail("DUPLICATE_SKU", `SKU "${parsed.data.sku}" sudah dipakai produk lain`, 409);
+    }
+    return handleError(error);
+  }
   return ok(data, 201);
 }

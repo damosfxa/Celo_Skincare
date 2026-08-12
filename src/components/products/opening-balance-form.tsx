@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -96,19 +97,22 @@ export function OpeningBalanceForm() {
             
             <div className="space-y-2">
               <Label htmlFor="product_id">Produk</Label>
-              <select
-                id="product_id"
+              <Select
                 disabled={isLoading}
-                className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                {...form.register("product_id")}
+                value={form.watch("product_id")}
+                onValueChange={(value) => form.setValue("product_id", value as string, { shouldValidate: true })}
               >
-                <option value="" className="bg-background text-muted-foreground">Pilih Produk</option>
-                {regularProducts.map(p => (
-                  <option key={p.id} value={p.id} className="bg-background">
-                    {p.sku} - {p.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Pilih Produk" />
+                </SelectTrigger>
+                <SelectContent>
+                  {regularProducts.map(p => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.sku} - {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {form.formState.errors.product_id && (
                 <p className="text-sm font-medium text-destructive">
                   {form.formState.errors.product_id.message}

@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Loader2, Plus, PackageOpen, X, RotateCcw, Box, Upload, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -278,31 +279,37 @@ export default function SimulationPage() {
           <form onSubmit={handleGenerate} className="flex flex-col sm:flex-row items-end gap-4">
             <div className="space-y-2 w-full sm:w-48">
               <Label htmlFor="channel">Channel / Platform</Label>
-              <select
-                id="channel"
+              <Select
                 value={channel}
-                onChange={(e) => setChannel(e.target.value)}
+                onValueChange={(value) => setChannel(value as string)}
                 disabled={isGenerating}
-                className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <option value="shopee" className="bg-background">Shopee</option>
-                <option value="tiktok" className="bg-background">TikTok Shop</option>
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Pilih Channel" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="shopee">Shopee</SelectItem>
+                  <SelectItem value="tiktok">TikTok Shop</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
             <div className="space-y-2 w-full sm:w-32">
               <Label htmlFor="count">Jumlah Pesanan</Label>
-              <select
-                id="count"
+              <Select
                 value={count}
-                onChange={(e) => setCount(e.target.value)}
+                onValueChange={(value) => setCount(value as string)}
                 disabled={isGenerating}
-                className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <option value="1" className="bg-background">1 Order</option>
-                <option value="3" className="bg-background">3 Orders</option>
-                <option value="5" className="bg-background">5 Orders</option>
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Pilih Jumlah" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 Order</SelectItem>
+                  <SelectItem value="3">3 Orders</SelectItem>
+                  <SelectItem value="5">5 Orders</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <Button type="submit" disabled={isGenerating} className="w-full sm:w-auto">
@@ -325,39 +332,43 @@ export default function SimulationPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="manualOutProduct">Pilih Produk</Label>
-                <select
-                  id="manualOutProduct"
+                <Select
                   value={manualOutProduct}
-                  onChange={(e) => setManualOutProduct(e.target.value)}
+                  onValueChange={(value) => setManualOutProduct(value as string)}
                   disabled={isManualOutLoading}
-                  required
-                  className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <option value="" disabled>Pilih Produk</option>
-                  {products.filter(p => !p.is_bundle && p.current_qty > 0).map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.sku} - {p.name} (Sisa: {p.current_qty.toLocaleString("id-ID")})
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Pilih Produk" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products.filter(p => !p.is_bundle && p.current_qty > 0).map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.sku} - {p.name} (Sisa: {p.current_qty.toLocaleString("id-ID")})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="manualOutReason">Tipe Mutasi</Label>
-                <select
-                  id="manualOutReason"
+                <Select
                   value={manualOutReason}
-                  onChange={(e) => setManualOutReason(e.target.value)}
+                  onValueChange={(value) => setManualOutReason(value as string)}
                   disabled={isManualOutLoading}
-                  className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <option value="offline">Penjualan Offline</option>
-                  <option value="bonus">Bonus</option>
-                  <option value="promo">Promo</option>
-                  <option value="sample">Sample</option>
-                  <option value="damaged">Barang Rusak</option>
-                  <option value="expired">Barang Kedaluwarsa</option>
-                </select>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Pilih Tipe Mutasi" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="offline">Penjualan Offline</SelectItem>
+                    <SelectItem value="bonus">Bonus</SelectItem>
+                    <SelectItem value="promo">Promo</SelectItem>
+                    <SelectItem value="sample">Sample</SelectItem>
+                    <SelectItem value="damaged">Barang Rusak</SelectItem>
+                    <SelectItem value="expired">Barang Kedaluwarsa</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {["bonus", "promo", "sample"].includes(manualOutReason) && (

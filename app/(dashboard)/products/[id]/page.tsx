@@ -15,6 +15,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const componentSchema = z.object({
@@ -321,19 +322,22 @@ export default function ProductDetailPage() {
                   <div key={field.id} className="flex flex-col sm:flex-row gap-4 items-start sm:items-end p-4 border rounded-md bg-muted/20">
                     <div className="flex-1 space-y-2 w-full">
                       <Label htmlFor={`components.${index}.component_product_id`}>Produk Komponen</Label>
-                      <select
-                        id={`components.${index}.component_product_id`}
-                        {...form.register(`components.${index}.component_product_id` as const)}
+                      <Select
                         disabled={isSubmitting}
-                        className="flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        value={form.watch(`components.${index}.component_product_id`)}
+                        onValueChange={(value) => form.setValue(`components.${index}.component_product_id`, value as string, { shouldValidate: true })}
                       >
-                        <option value="" disabled className="bg-background">Pilih produk...</option>
-                        {nonBundleProducts.map((p) => (
-                          <option key={p.id} value={p.id} className="bg-background">
-                            {p.sku} - {p.name}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="w-full bg-background" id={`components.${index}.component_product_id`}>
+                          <SelectValue placeholder="Pilih produk..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {nonBundleProducts.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.sku} - {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       {form.formState.errors.components?.[index]?.component_product_id && (
                         <p className="text-sm font-medium text-destructive">
                           {form.formState.errors.components[index]?.component_product_id?.message}

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -10,6 +9,7 @@ import Image from "next/image";
 import { Loader2, Eye, EyeOff } from "lucide-react";
 
 import { createClient } from "@/lib/supabase/client";
+import { useSupabaseAuthAction } from "@/hooks/useSupabaseAuthAction";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,8 +20,10 @@ const formSchema = z.object({
 });
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  // Pola loading/error/navigasi login ini dipakai bareng LogoutButton
+  // (src/components/layout/logout-button.tsx) lewat useSupabaseAuthAction,
+  // supaya cuma ditulis 1x, bukan 2x di 2 file terpisah.
+  const { isLoading, run } = useSupabaseAuthAction();
   const [showPassword, setShowPassword] = useState(false);
   const supabase = createClient();
 
@@ -34,22 +36,14 @@ export default function LoginPage() {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsLoading(true);
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: values.email,
-      password: values.password,
-    });
-
-    if (error) {
-      toast.error(error.message);
-      setIsLoading(false);
-      return;
-    }
-
-    toast.success("Login berhasil");
-    router.push("/");
-    router.refresh();
+    await run(
+      () => supabase.auth.signInWithPassword({ email: values.email, password: values.password }),
+      {
+        successPath: "/",
+        onError: (message) => toast.error(message),
+        onSuccess: () => toast.success("Login berhasil"),
+      }
+    );
   }
 
   return (

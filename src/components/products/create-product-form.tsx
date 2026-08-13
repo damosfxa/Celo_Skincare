@@ -130,7 +130,12 @@ export function CreateProductForm() {
                     }
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent>
+                {/* alignItemWithTrigger={false} KHUSUS di sini: daftarnya
+                    cuma 2 pilihan, mode geser-ke-item-terpilih (default di
+                    komponen Select) kelihatan kaya kedutan di HP. Jangan
+                    ubah default di select.tsx, dropdown lain (misal Produk)
+                    butuh defaultnya tetap aktif. */}
+                <SelectContent alignItemWithTrigger={false}>
                   <SelectItem value="false">Reguler (Fisik)</SelectItem>
                   <SelectItem value="true">Bundle (Paket)</SelectItem>
                 </SelectContent>

@@ -63,13 +63,20 @@ function SelectContent({
   sideOffset = 4,
   align = "center",
   alignOffset = 0,
-  // false SENGAJA (defaultnya base-ui true): mode "sejajarkan item terpilih
-  // pas ke posisi tombol" itu butuh dropdown menghitung ulang & geser
-  // posisinya sesaat setelah kebuka -- buat daftar pendek (misal cuma 2
-  // pilihan) pergeseran itu kelihatan jelas kaya kedutan. Diganti ke cara
-  // dropdown biasa: selalu buka di bawah/atas tombol, tanpa perlu
-  // menghitung ulang posisi.
-  alignItemWithTrigger = false,
+  // true = bawaan base-ui, DIPERTAHANKAN sebagai default di sini. Ini yang
+  // bikin dropdown otomatis geser ke item yang lagi kepilih pas dibuka --
+  // penting buat daftar panjang (misal dropdown Produk), tanpa ini item
+  // yang kepilih bisa "hilang" jauh di bawah, user harus scroll manual
+  // buat nemuin.
+  //
+  // Sempat diganti ke false secara global (buat benerin kedutan di dropdown
+  // PENDEK seperti Tipe Produk, 2 pilihan), tapi itu ternyata mematikan
+  // fitur geser-ke-item-terpilih di SEMUA dropdown termasuk yang panjang
+  // (ditemukan lewat code review). Perbaikannya sekarang per-pemakaian:
+  // kalau ada dropdown pendek yang kedutan lagi, kasih
+  // `alignItemWithTrigger={false}` cuma di situ (lihat contoh di
+  // create-product-form.tsx untuk "Tipe Produk"), bukan diubah di sini.
+  alignItemWithTrigger = true,
   ...props
 }: SelectPrimitive.Popup.Props &
   Pick<

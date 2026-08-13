@@ -16,11 +16,23 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSearchParams } from "next/navigation";
+import { scrollElementIntoView } from "@/lib/utils";
 import { toast } from "sonner";
 import { Loader2, AlertTriangle, ArrowDownRight, ArrowUpRight, Edit, Download } from "lucide-react";
 
 export default function LedgerPage() {
   const searchParams = useSearchParams();
+  // States untuk Filter -- SENGAJA di komponen luar ini (yang tidak ikut
+  // "lahir ulang"), bukan di LedgerPageContent -- supaya filter yang sudah
+  // dipilih user TIDAK ikut ke-reset tiap kali link produk diklik dari
+  // Anomali Harian. Ditemukan lewat code review: dulu semua filter ada di
+  // dalam LedgerPageContent, jadi remount (lihat komentar `key` di bawah)
+  // otomatis membuang filter yang sedang aktif tiap ganti produk.
+  const [filterMovementType, setFilterMovementType] = useState<string>("all");
+  const [filterChannel, setFilterChannel] = useState<string>("all");
+  const [filterReason, setFilterReason] = useState<string>("all");
+  const [filterDateFrom, setFilterDateFrom] = useState<string>("");
+  const [filterDateTo, setFilterDateTo] = useState<string>("");
   // key={...} SENGAJA: cara paling pasti supaya halaman ini "lahir ulang"
   // (semua state di dalamnya kebaca fresh dari URL yang terbaru) tiap kali
   // link diklik (misal nama produk di Anomali Harian) -- persis efeknya
@@ -29,26 +41,63 @@ export default function LedgerPage() {
   // objek, lalu teks), dua-duanya masih kebobolan di klik ke-2/ke-3 --
   // remount pakai `key` React ini yang dijamin selalu benar, gak gantung ke
   // detail perilaku internal Next.js yang bisa berubah-ubah.
-  return <LedgerPageContent key={searchParams.toString()} searchParams={searchParams} />;
+  return (
+    <LedgerPageContent
+      key={searchParams.toString()}
+      searchParams={searchParams}
+      filterMovementType={filterMovementType}
+      setFilterMovementType={setFilterMovementType}
+      filterChannel={filterChannel}
+      setFilterChannel={setFilterChannel}
+      filterReason={filterReason}
+      setFilterReason={setFilterReason}
+      filterDateFrom={filterDateFrom}
+      setFilterDateFrom={setFilterDateFrom}
+      filterDateTo={filterDateTo}
+      setFilterDateTo={setFilterDateTo}
+    />
+  );
 }
 
-function LedgerPageContent({ searchParams }: { searchParams: ReturnType<typeof useSearchParams> }) {
+type LedgerPageContentProps = {
+  searchParams: ReturnType<typeof useSearchParams>;
+  filterMovementType: string;
+  setFilterMovementType: (value: string) => void;
+  filterChannel: string;
+  setFilterChannel: (value: string) => void;
+  filterReason: string;
+  setFilterReason: (value: string) => void;
+  filterDateFrom: string;
+  setFilterDateFrom: (value: string) => void;
+  filterDateTo: string;
+  setFilterDateTo: (value: string) => void;
+};
+
+function LedgerPageContent({
+  searchParams,
+  filterMovementType,
+  setFilterMovementType,
+  filterChannel,
+  setFilterChannel,
+  filterReason,
+  setFilterReason,
+  filterDateFrom,
+  setFilterDateFrom,
+  filterDateTo,
+  setFilterDateTo,
+}: LedgerPageContentProps) {
   const initialTab = searchParams.get("tab") === "anomalies" ? "anomalies" : "drilldown";
   const initialProduct = searchParams.get("product") || "";
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [selectedProductId, setSelectedProductId] = useState<string>(initialProduct);
-  // Ditangkap sekali di awal (nilai URL pas komponen ini "lahir"), dipakai
-  // buat nentuin perlu auto-scroll atau tidak -- lihat effect scroll di
-  // bawah, dekat useReconciliationDrilldown.
-  const [arrivedViaProductLink] = useState(() => initialTab === "drilldown" && !!initialProduct);
+  // const biasa (bukan useState): LedgerPageContent selalu "lahir ulang"
+  // pas URL berubah (lihat key={...} di LedgerPage), jadi initialTab/
+  // initialProduct sudah pasti tetap sama sepanjang umur komponen ini --
+  // nangkep sekali lewat useState cuma nambah 1 hook tanpa manfaat.
+  // Dipakai buat nentuin perlu auto-scroll atau tidak, lihat effect scroll
+  // di bawah, dekat useReconciliationDrilldown.
+  const arrivedViaProductLink = initialTab === "drilldown" && !!initialProduct;
   const hasAutoScrolledRef = useRef(false);
-
-  // States untuk Filter
-  const [filterMovementType, setFilterMovementType] = useState<string>("all");
-  const [filterChannel, setFilterChannel] = useState<string>("all");
-  const [filterReason, setFilterReason] = useState<string>("all");
-  const [filterDateFrom, setFilterDateFrom] = useState<string>("");
-  const [filterDateTo, setFilterDateTo] = useState<string>("");
 
   type CorrectionState = {
     entry: LedgerEntry;
@@ -80,14 +129,12 @@ function LedgerPageContent({ searchParams }: { searchParams: ReturnType<typeof u
   useEffect(() => {
     if (arrivedViaProductLink && !isLoadingDrilldown && !hasAutoScrolledRef.current) {
       hasAutoScrolledRef.current = true;
-      // Tunggu 2 frame biar tabel yang baru selesai dimuat benar-benar
-      // kerender dulu, baru discroll -- supaya tidak nyasar ke posisi yang
-      // masih berubah-ubah.
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          document.getElementById("drilldown-view")?.scrollIntoView({ behavior: "smooth", block: "start" });
-        });
-      });
+      // Tunggu 1 frame biar tabel yang baru selesai dimuat benar-benar
+      // kerender dulu, baru discroll. Dulu 2 frame bersarang (jaga-jaga dari
+      // versi awal effect ini, sebelum ada penjaga isLoadingDrilldown) --
+      // sekarang effect ini baru jalan SETELAH data beneran siap (React
+      // sudah commit render-nya), jadi 1 frame sudah cukup.
+      requestAnimationFrame(() => scrollElementIntoView("drilldown-view"));
     }
   }, [arrivedViaProductLink, isLoadingDrilldown]);
 

@@ -4,6 +4,7 @@ import { Menu } from "lucide-react";
 import { NavLinks } from "@/components/layout/nav-links";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { LogoutButton } from "@/components/layout/logout-button";
+import { ScrollResetOnNavigate } from "@/components/layout/scroll-reset-on-navigate";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
@@ -21,6 +22,15 @@ export default async function DashboardLayout({
   // sudah tersimpan (tanpa nanya ulang ke server), jadi tidak dobel network
   // call tiap pindah halaman -- ini akar dari keluhan "delay pindah
   // halaman". Redirect di bawah tetap dijaga sebagai jaring pengaman kedua.
+  //
+  // PENTING (ditemukan lewat code review): getSession() di sini TIDAK
+  // memvalidasi ulang ke server -- dia cuma baca cookie yang ada, murni
+  // percaya. Ini aman HANYA karena middleware.ts (config.matcher di
+  // middleware.ts) dijamin selalu jalan lebih dulu untuk SEMUA route di
+  // folder (dashboard) ini. Kalau nanti matcher middleware.ts diubah dan
+  // ada halaman dashboard yang jadi kelewat, layout ini kehilangan
+  // pemeriksaan yang beneran valid. Jangan ubah matcher di middleware.ts
+  // tanpa mastiin folder (dashboard) tetap 100% tercakup.
   const { data: { session } } = await supabase.auth.getSession();
   const user = session?.user;
 
@@ -119,6 +129,7 @@ export default async function DashboardLayout({
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 min-h-0">
         <div id="main-scroll-area" className="flex-1 overflow-y-auto overflow-x-hidden bg-background p-4 md:p-6">
+          <ScrollResetOnNavigate />
           {children}
         </div>
       </main>

@@ -1,36 +1,31 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { LogOut, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useSupabaseAuthAction } from "@/hooks/useSupabaseAuthAction";
 import { toast } from "sonner";
 
 /**
  * Tombol Logout yang BENERAN menghapus sesi login (signOut), bukan cuma
  * link biasa ke halaman Login. Sebelum ini, tombolnya cuma <Link
  * href="/login"> -- kelihatan seperti berhasil logout, padahal sesi di
- * balik layar masih aktif sama sekali. Setelah middleware.ts ditambah
+ * balik layar masih aktif sama sekali. Setelah middleware ditambah
  * (yang otomatis melempar balik ke dashboard kalau sesi masih aktif), bug
  * ini jadi kelihatan jelas: klik Logout malah nyangkut balik ke dashboard.
+ *
+ * Pola loading/error/navigasinya dipakai bareng app/login/page.tsx lewat
+ * useSupabaseAuthAction (src/hooks/), supaya perbaikan seperti try/catch
+ * ini cukup ditulis 1x, bukan 2x di 2 file.
  */
 export function LogoutButton({ className }: { className?: string }) {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
+  const { isLoading, run } = useSupabaseAuthAction();
 
-  const handleLogout = async () => {
-    setIsLoading(true);
+  const handleLogout = () => {
     const supabase = createClient();
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      toast.error("Gagal logout: " + error.message);
-      setIsLoading(false);
-      return;
-    }
-
-    router.push("/login");
-    router.refresh();
+    run(() => supabase.auth.signOut(), {
+      successPath: "/login",
+      onError: (message) => toast.error("Gagal logout: " + message),
+    });
   };
 
   return (

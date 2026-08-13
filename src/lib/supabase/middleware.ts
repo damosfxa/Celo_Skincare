@@ -38,20 +38,43 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isLoginPage = request.nextUrl.pathname.startsWith("/login");
+  // Match PERSIS "/login", bukan sekadar diawali "/login" -- kalau nanti ada
+  // halaman lain namanya diawali "login" (misal /login-help), itu harus
+  // dianggap BUKAN halaman login untuk logika di bawah.
+  const isLoginPage = request.nextUrl.pathname === "/login";
+
+  // Dipakai di kedua cabang redirect di bawah -- lihat komentar di
+  // redirectTo kenapa ini penting.
+  const redirectTo = (pathname: string) => {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname;
+    // Buang query string asli: kalau tidak, ID produk/state internal dari
+    // URL yang diminta ikut terbawa ke URL halaman Login (nyangkut di riwayat
+    // browser), padahal halaman Login tidak butuh itu sama sekali.
+    url.search = "";
+    const response = NextResponse.redirect(url);
+    // PENTING: salin cookie yang baru disegarkan (lihat setAll di atas) ke
+    // response redirect ini. NextResponse.redirect() bikin objek response
+    // BARU dari nol -- kalau cookie yang sudah disegarkan di supabaseResponse
+    // tidak disalin ke sini, browser tidak akan pernah menerima token
+    // sesi/refresh yang baru itu. Baru ketauan lewat code review: efeknya
+    // user bisa ke-logout sendiri tanpa sebab jelas, karena refresh token
+    // lama sudah dianggap habis oleh server tapi browser masih pegang yang
+    // lama (refresh token bersifat sekali pakai).
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      response.cookies.set(cookie);
+    });
+    return response;
+  };
 
   if (!user && !isLoginPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return redirectTo("/login");
   }
 
   // Kalau sudah login tapi masih coba buka halaman Login, langsung
   // arahkan ke dashboard -- tidak perlu lihat form login lagi.
   if (user && isLoginPage) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
+    return redirectTo("/");
   }
 
   // PENTING: kembalikan supabaseResponse apa adanya (bukan bikin response

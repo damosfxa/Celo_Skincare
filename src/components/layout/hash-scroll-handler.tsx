@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { scrollElementIntoView } from "@/lib/utils";
 
 /**
  * Scroll manual & pasti ke elemen yang id-nya cocok dengan hash URL
@@ -19,9 +20,7 @@ export function HashScrollHandler() {
     if (!hash) return;
 
     const id = decodeURIComponent(hash.slice(1));
-    const scrollToTarget = () => {
-      document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    };
+    const scrollToTarget = () => scrollElementIntoView(id);
 
     // Tunggu 1 tarikan napas biar font/ikon/layout selesai menetap dulu,
     // supaya posisi yang dituju sudah final (tidak berubah lagi) pas discroll.

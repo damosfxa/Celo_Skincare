@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useProducts } from "@/hooks/useProducts";
 import { useReconciliationDrilldown, useDailyAnomalies, correctLedgerEntry, LedgerEntry } from "@/hooks/useLedger";
@@ -23,7 +23,42 @@ export default function LedgerPage() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") === "anomalies" ? "anomalies" : "drilldown";
   const initialProduct = searchParams.get("product") || "";
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [selectedProductId, setSelectedProductId] = useState<string>(initialProduct);
+
+  // Dengar terus perubahan link (misal klik nama produk di Anomali Harian),
+  // bukan cuma dibaca sekali pas pertama kali halaman dibuka -- supaya tab &
+  // produk terpilih ikut pindah otomatis tanpa perlu refresh manual, baik di
+  // HP maupun laptop. Disesuaikan langsung saat render (bukan lewat effect)
+  // supaya tabnya sudah benar di render yang sama, tidak nunggu 1 siklus lagi.
+  const [syncedParams, setSyncedParams] = useState(searchParams);
+  if (searchParams !== syncedParams) {
+    setSyncedParams(searchParams);
+    const tabFromUrl = searchParams.get("tab") === "anomalies" ? "anomalies" : "drilldown";
+    const productFromUrl = searchParams.get("product") || "";
+    setActiveTab(tabFromUrl);
+    if (productFromUrl) {
+      setSelectedProductId(productFromUrl);
+    }
+  }
+
+  // Scroll halus ke tabel Riwayat Ledger begitu berpindah ke sana lewat link
+  // (bukan lewat klik tab manual). Ini efek ke luar (posisi scroll browser),
+  // jadi memang tempatnya di useEffect, bukan setState.
+  useEffect(() => {
+    const tabFromUrl = searchParams.get("tab") === "anomalies" ? "anomalies" : "drilldown";
+    const productFromUrl = searchParams.get("product");
+    if (tabFromUrl === "drilldown" && productFromUrl) {
+      // Tunggu 2 frame biar panel drilldown yang baru aktif selesai kerender
+      // dulu, baru discroll -- supaya tidak nyasar ke posisi panel yang masih
+      // tersembunyi.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.getElementById("drilldown-view")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+    }
+  }, [searchParams]);
 
   // States untuk Filter
   const [filterMovementType, setFilterMovementType] = useState<string>("all");
@@ -42,7 +77,7 @@ export default function LedgerPage() {
   const [correctionState, setCorrectionState] = useState<CorrectionState | null>(null);
   const [isCorrecting, setIsCorrecting] = useState(false);
 
-  const { products } = useProducts();
+  const { products, isLoading: isLoadingProducts } = useProducts();
   const { data: drilldownData, isLoading: isLoadingDrilldown, mutate } = useReconciliationDrilldown(
     selectedProductId || undefined
   );
@@ -208,14 +243,14 @@ export default function LedgerPage() {
         </p>
       </div>
 
-      <Tabs defaultValue={initialTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as string)} className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="drilldown">Drilldown Produk</TabsTrigger>
           <TabsTrigger value="anomalies">Anomali Harian</TabsTrigger>
         </TabsList>
 
         <TabsContent value="drilldown" className="space-y-4">
-          <Card>
+          <Card id="drilldown-view" className="scroll-mt-24">
             <CardHeader>
               <CardTitle>Riwayat Ledger Produk</CardTitle>
               <CardDescription>
@@ -232,8 +267,9 @@ export default function LedgerPage() {
                     <SelectValue placeholder="Pilih Produk">
                       {(value: string | null) => {
                         if (!value) return "Pilih Produk";
+                        if (isLoadingProducts) return "Memuat...";
                         const p = products.find((pr) => pr.id === value);
-                        return p ? `${p.sku} - ${p.name}` : value;
+                        return p ? `${p.sku} - ${p.name}` : "Produk tidak ditemukan";
                       }}
                     </SelectValue>
                   </SelectTrigger>

@@ -68,7 +68,7 @@ export default function OpnameSessionsPage() {
           <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-300">Cara Kerja Stok Opname</h4>
           <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
             Ini adalah alat untuk mencocokkan catatan sistem dengan stok fisik gudang. 
-            Belum familiar? Pelajari langkah-langkahnya di <a href="/panduan#opname" className="underline font-medium hover:text-amber-900 dark:hover:text-amber-200">Panduan Stok Opname</a>.
+            Belum familiar? Pelajari langkah-langkahnya di <Link href="/panduan#opname" className="underline font-medium hover:text-amber-900 dark:hover:text-amber-200">Panduan Stok Opname</Link>.
           </p>
         </div>
       </div>

@@ -31,9 +31,16 @@ export default function LedgerPage() {
   // produk terpilih ikut pindah otomatis tanpa perlu refresh manual, baik di
   // HP maupun laptop. Disesuaikan langsung saat render (bukan lewat effect)
   // supaya tabnya sudah benar di render yang sama, tidak nunggu 1 siklus lagi.
-  const [syncedParams, setSyncedParams] = useState(searchParams);
-  if (searchParams !== syncedParams) {
-    setSyncedParams(searchParams);
+  //
+  // Dibandingkan sebagai teks (bukan identitas objek) dengan sengaja: objek
+  // searchParams dari Next.js tidak dijamin selalu sama persis (reference)
+  // walau URL-nya belum berubah, jadi banding objek bisa salah pas klik
+  // ke-2/ke-3 (klik pertama jalan, berikutnya butuh refresh -- bug yang
+  // ditemukan pas testing).
+  const currentParamsString = searchParams.toString();
+  const [syncedParamsString, setSyncedParamsString] = useState(currentParamsString);
+  if (currentParamsString !== syncedParamsString) {
+    setSyncedParamsString(currentParamsString);
     const tabFromUrl = searchParams.get("tab") === "anomalies" ? "anomalies" : "drilldown";
     const productFromUrl = searchParams.get("product") || "";
     setActiveTab(tabFromUrl);

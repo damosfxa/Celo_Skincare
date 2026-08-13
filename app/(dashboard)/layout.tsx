@@ -15,7 +15,14 @@ export default async function DashboardLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // Pengecekan utama (yang bener-bener nanya ke server Supabase) sudah
+  // dilakukan di middleware.ts untuk SETIAP pindah halaman, dan cookie
+  // sesinya sudah disegarkan di sana. Di sini cukup baca data sesi yang
+  // sudah tersimpan (tanpa nanya ulang ke server), jadi tidak dobel network
+  // call tiap pindah halaman -- ini akar dari keluhan "delay pindah
+  // halaman". Redirect di bawah tetap dijaga sebagai jaring pengaman kedua.
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
 
   if (!user) {
     redirect("/login");
@@ -106,8 +113,8 @@ export default async function DashboardLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col min-w-0">
-        <div className="flex-1 overflow-auto bg-background p-4 md:p-6">
+      <main className="flex-1 flex flex-col min-w-0 min-h-0">
+        <div id="main-scroll-area" className="flex-1 overflow-auto bg-background p-4 md:p-6">
           {children}
         </div>
       </main>

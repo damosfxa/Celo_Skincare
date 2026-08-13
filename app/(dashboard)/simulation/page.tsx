@@ -264,7 +264,7 @@ export default function SimulationPage() {
           <h4 className="text-sm font-semibold text-sky-800 dark:text-sky-300">Baru menggunakan Simulasi?</h4>
           <p className="text-sm text-sky-700 dark:text-sky-400 mt-1">
             Halaman ini dipakai untuk memasukkan data pesanan karena sistem belum tersambung ke API asli.
-            Silakan baca <Link href="/panduan#simulasi" className="underline font-medium hover:text-sky-900 dark:hover:text-sky-200">Panduan Simulasi</Link> untuk memahami cara kerjanya.
+            Silakan baca <Link href="/panduan#simulasi" scroll={false} className="underline font-medium hover:text-sky-900 dark:hover:text-sky-200">Panduan Simulasi</Link> untuk memahami cara kerjanya.
           </p>
         </div>
       </div>

@@ -1,4 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { HashScrollHandler } from "@/components/layout/hash-scroll-handler";
+import { ScrollToTopButton } from "@/components/layout/scroll-to-top-button";
 import {
   Box,
   FileText,
@@ -17,6 +19,8 @@ import {
 export default function PanduanPage() {
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-10">
+      <HashScrollHandler />
+      <ScrollToTopButton />
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Panduan Penggunaan</h2>
         <p className="text-muted-foreground mt-1">

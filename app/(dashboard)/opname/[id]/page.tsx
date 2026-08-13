@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, ScanBarcode, Lock, ArrowLeft, Send, Download } from "lucide-react";
 import { toast } from "sonner";
+import { downloadCsv } from "@/lib/utils";
 
 const formSchema = z.object({
   batch_id: z.string().min(1, "Batch ID wajib diisi"),
@@ -138,20 +139,11 @@ export default function OpnameSessionDetail() {
       const physQty = item.physical_qty === null ? "Belum dihitung" : item.physical_qty;
       const variance = item.variance === undefined ? "-" : item.variance;
 
-      return [batchCode, sku, name, sysQty, physQty, variance].join(";");
+      return [batchCode, sku, name, sysQty, physQty, variance];
     });
 
-    const csvString = [headers.join(";"), ...rows].join("\n");
-    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = url;
     const dateStr = new Date().toISOString().slice(0, 10);
-    link.setAttribute("download", `opname_${sessionId}_${dateStr}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCsv(`opname_${sessionId}_${dateStr}.csv`, headers, rows);
   };
 
   if (isLoadingSession) {

@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSearchParams } from "next/navigation";
-import { scrollElementIntoView } from "@/lib/utils";
+import { scrollElementIntoView, downloadCsv } from "@/lib/utils";
 import { toast } from "sonner";
 import { Loader2, AlertTriangle, ArrowDownRight, ArrowUpRight, Edit, Download } from "lucide-react";
 
@@ -259,10 +259,10 @@ function LedgerPageContent({
     }
     
     const headers = ["Waktu", "Batch ID", "Tipe Mutasi", "Channel", "Referensi", "Alasan", "Ref. Campaign", "Perubahan Qty", "Saldo Berjalan"];
-    
+
     const rows = filteredRows.map(({ entry, idx }) => {
       const waktu = formatDate(entry.created_at);
-      const batchId = entry.batch_id;
+      const batchId = entry.batch_code || entry.batch_id;
       const type = entry.movement_type;
       const channel = entry.channel || "-";
       const reference = entry.reference_type ? `${entry.reference_type}: ${entry.reference_id}` : "-";
@@ -270,23 +270,14 @@ function LedgerPageContent({
       const campaign = entry.campaign_reference || "-";
       const qty = entry.qty_delta;
       const saldo = runningBalances[idx] !== undefined ? runningBalances[idx] : 0;
-      
-      return [waktu, batchId, type, channel, reference, reason, campaign, qty, saldo].join(";");
+
+      return [waktu, batchId, type, channel, reference, reason, campaign, qty, saldo];
     });
-    
-    const csvString = [headers.join(";"), ...rows].join("\n");
-    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement("a");
-    link.href = url;
+
     const selectedProduct = products.find(p => p.id === selectedProductId);
     const skuForFilename = selectedProduct?.sku?.replace(/[^a-zA-Z0-9-]/g, "_") || "produk";
     const dateStr = new Date().toISOString().slice(0, 10);
-    link.setAttribute("download", `ledger_${skuForFilename}_${dateStr}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCsv(`ledger_${skuForFilename}_${dateStr}.csv`, headers, rows);
   };
 
   return (
@@ -480,8 +471,8 @@ function LedgerPageContent({
                                 {formatDate(entry.created_at)}
                               </TableCell>
                               <TableCell className="font-mono text-xs">
-                                <div className="flex items-center justify-between gap-2" title={entry.batch_id}>
-                                  <span className="truncate max-w-[90px]">{entry.batch_id}</span>
+                                <div className="flex items-center justify-between gap-2" title={entry.batch_code || entry.batch_id}>
+                                  <span className="truncate max-w-[90px]">{entry.batch_code || entry.batch_id}</span>
                                   {entry.batch_id !== "-" && <QrGeneratorModal batchId={entry.batch_id} />}
                                 </div>
                               </TableCell>

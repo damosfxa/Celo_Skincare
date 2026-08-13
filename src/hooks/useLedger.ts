@@ -15,6 +15,10 @@ const fetcher = async (url: string) => {
 export type LedgerEntry = {
   id: string;
   batch_id: string;
+  // Kode batch yang gampang dibaca (misal "OB-2026-001"), sama dengan yang
+  // tertera di label QR fisik. batch_id (di atas) tetap raw UUID, dipakai
+  // buat cari data QR-nya lewat QrGeneratorModal, bukan buat ditampilkan.
+  batch_code?: string | null;
   movement_type: string;
   qty_delta: number;
   reference_type?: string;

@@ -16,14 +16,34 @@ export async function GET(request: Request) {
 
   const batchIds = ((batches as { id: string }[]) ?? []).map((b) => b.id);
 
-  const { data: ledger, error: ledgerError } = await supabase
+  const { data: ledgerRaw, error: ledgerError } = await supabase
     .from("stock_ledger")
     .select(
-      "id, batch_id, movement_type, qty_delta, channel, reference_type, reference_id, reason, note, campaign_reference, created_at"
+      "id, batch_id, movement_type, qty_delta, channel, reference_type, reference_id, reason, note, campaign_reference, created_at, product_batches(batch_code)"
     )
     .in("batch_id", batchIds.length ? batchIds : ["00000000-0000-0000-0000-000000000000"])
     .order("created_at", { ascending: true });
   if (ledgerError) return handleError(ledgerError);
+
+  // Ratakan product_batches(batch_code) jadi batch_code langsung di tiap
+  // baris -- ditemukan lewat feedback user: kolom Batch ID di tabel &
+  // Export CSV Drilldown selama ini nampilin batch_id MENTAH (UUID dari
+  // database, misal "59746768-f2e1-..."), bukan kode batch yang gampang
+  // dibaca (misal "OB-2026-001") yang tertera di label QR fisik. batch_id
+  // mentah tetap disertakan (dipakai QrGeneratorModal buat cari data QR-nya).
+  const ledger = (ledgerRaw ?? []).map((row) => {
+    const { product_batches, ...rest } = row;
+    // Supabase bisa balikin relasi ini sebagai objek tunggal ATAU array
+    // tergantung cara PostgREST menyimpulkan hubungannya -- ambil dulu
+    // elemen pertama kalau array, baru baca batch_code-nya. any di sini
+    // sengaja, TypeScript sering salah nyimpulkan tipe gabungan begini
+    // jadi `never` walau datanya valid saat runtime.
+    const pb = (Array.isArray(product_batches) ? product_batches[0] : product_batches) as
+      | { batch_code: string }
+      | null
+      | undefined;
+    return { ...rest, batch_code: pb?.batch_code ?? null };
+  });
 
   // SENGAJA tetap membaca v_product_stock (hitung ulang asli dari
   // stock_ledger), bukan tabel cache seperti endpoint saldo lainnya.

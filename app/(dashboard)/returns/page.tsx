@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
+import { downloadCsv } from "@/lib/utils";
 import {
   Sheet,
   SheetContent,
@@ -164,20 +165,11 @@ export default function ReturnsPage() {
       const submittedDate = formatDate(item.created_at);
       const deadline = formatDate(item.claim_deadline || "");
 
-      return [orderId, type, productName, sku, channel, qty, condition, submittedDate, deadline].join(";");
+      return [orderId, type, productName, sku, channel, qty, condition, submittedDate, deadline];
     });
 
-    const csvString = [headers.join(";"), ...rows].join("\n");
-    const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-
-    const link = document.createElement("a");
-    link.href = url;
     const dateStr = new Date().toISOString().slice(0, 10);
-    link.setAttribute("download", `retur_${dateStr}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCsv(`retur_${dateStr}.csv`, headers, rows);
   };
 
   return (

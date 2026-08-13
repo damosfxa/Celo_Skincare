@@ -118,7 +118,7 @@ export default async function DashboardLayout({
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 min-h-0">
-        <div id="main-scroll-area" className="flex-1 overflow-auto bg-background p-4 md:p-6">
+        <div id="main-scroll-area" className="flex-1 overflow-y-auto overflow-x-hidden bg-background p-4 md:p-6">
           {children}
         </div>
       </main>

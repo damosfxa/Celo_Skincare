@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useProducts } from "@/hooks/useProducts";
 import { useReconciliationDrilldown, useDailyAnomalies, correctLedgerEntry, LedgerEntry } from "@/hooks/useLedger";
@@ -21,54 +21,27 @@ import { Loader2, AlertTriangle, ArrowDownRight, ArrowUpRight, Edit, Download } 
 
 export default function LedgerPage() {
   const searchParams = useSearchParams();
+  // key={...} SENGAJA: cara paling pasti supaya halaman ini "lahir ulang"
+  // (semua state di dalamnya kebaca fresh dari URL yang terbaru) tiap kali
+  // link diklik (misal nama produk di Anomali Harian) -- persis efeknya
+  // seperti refresh manual, tanpa benar-benar reload halaman. Sebelumnya
+  // dicoba pakai bandingkan URL lama-vs-baru secara manual (dulu identitas
+  // objek, lalu teks), dua-duanya masih kebobolan di klik ke-2/ke-3 --
+  // remount pakai `key` React ini yang dijamin selalu benar, gak gantung ke
+  // detail perilaku internal Next.js yang bisa berubah-ubah.
+  return <LedgerPageContent key={searchParams.toString()} searchParams={searchParams} />;
+}
+
+function LedgerPageContent({ searchParams }: { searchParams: ReturnType<typeof useSearchParams> }) {
   const initialTab = searchParams.get("tab") === "anomalies" ? "anomalies" : "drilldown";
   const initialProduct = searchParams.get("product") || "";
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [selectedProductId, setSelectedProductId] = useState<string>(initialProduct);
-
-  // Dengar terus perubahan link (misal klik nama produk di Anomali Harian),
-  // bukan cuma dibaca sekali pas pertama kali halaman dibuka -- supaya tab &
-  // produk terpilih ikut pindah otomatis tanpa perlu refresh manual, baik di
-  // HP maupun laptop. Disesuaikan langsung saat render (bukan lewat effect)
-  // supaya tabnya sudah benar di render yang sama, tidak nunggu 1 siklus lagi.
-  //
-  // Dibandingkan sebagai teks (bukan identitas objek) dengan sengaja: objek
-  // searchParams dari Next.js tidak dijamin selalu sama persis (reference)
-  // walau URL-nya belum berubah, jadi banding objek bisa salah pas klik
-  // ke-2/ke-3 (klik pertama jalan, berikutnya butuh refresh -- bug yang
-  // ditemukan pas testing).
-  const currentParamsString = searchParams.toString();
-  const [syncedParamsString, setSyncedParamsString] = useState(currentParamsString);
-  if (currentParamsString !== syncedParamsString) {
-    setSyncedParamsString(currentParamsString);
-    const tabFromUrl = searchParams.get("tab") === "anomalies" ? "anomalies" : "drilldown";
-    const productFromUrl = searchParams.get("product") || "";
-    setActiveTab(tabFromUrl);
-    if (productFromUrl) {
-      setSelectedProductId(productFromUrl);
-    }
-  }
-
-  // Scroll halus ke tabel Riwayat Ledger begitu berpindah ke sana lewat link
-  // (bukan lewat klik tab manual). Ini efek ke luar (posisi scroll browser),
-  // jadi memang tempatnya di useEffect, bukan setState. Dependency-nya
-  // sengaja teks (currentParamsString), sama seperti alasan di penyesuaian
-  // tab/produk di atas -- supaya konsisten terdeteksi tiap link diklik.
-  useEffect(() => {
-    const params = new URLSearchParams(currentParamsString);
-    const tabFromUrl = params.get("tab") === "anomalies" ? "anomalies" : "drilldown";
-    const productFromUrl = params.get("product");
-    if (tabFromUrl === "drilldown" && productFromUrl) {
-      // Tunggu 2 frame biar panel drilldown yang baru aktif selesai kerender
-      // dulu, baru discroll -- supaya tidak nyasar ke posisi panel yang masih
-      // tersembunyi.
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          document.getElementById("drilldown-view")?.scrollIntoView({ behavior: "smooth", block: "start" });
-        });
-      });
-    }
-  }, [currentParamsString]);
+  // Ditangkap sekali di awal (nilai URL pas komponen ini "lahir"), dipakai
+  // buat nentuin perlu auto-scroll atau tidak -- lihat effect scroll di
+  // bawah, dekat useReconciliationDrilldown.
+  const [arrivedViaProductLink] = useState(() => initialTab === "drilldown" && !!initialProduct);
+  const hasAutoScrolledRef = useRef(false);
 
   // States untuk Filter
   const [filterMovementType, setFilterMovementType] = useState<string>("all");
@@ -92,6 +65,31 @@ export default function LedgerPage() {
     selectedProductId || undefined
   );
   const { anomalies, isLoading: isLoadingAnomalies } = useDailyAnomalies();
+
+  // Scroll halus ke tabel Riwayat Ledger begitu tiba di sini lewat link
+  // (bukan lewat klik tab manual) -- ditandai arrivedViaProductLink, nilai
+  // yang ditangkap sekali pas komponen ini lahir (lihat atas). Ini efek ke
+  // luar (posisi scroll browser), jadi memang tempatnya di useEffect.
+  //
+  // SENGAJA nunggu isLoadingDrilldown selesai (data beneran sudah kegambar)
+  // sebelum scroll -- kalau scroll pas masih skeleton loading, posisinya
+  // dihitung dari skeleton yang kosong/pendek, begitu data asli masuk
+  // (biasanya lebih tinggi) tampilan jadi kelihatan "gagal scroll" padahal
+  // cuma salah waktu. hasAutoScrolledRef mencegah scroll ini terulang lagi
+  // kalau nanti user ganti produk manual lewat dropdown di mount yang sama.
+  useEffect(() => {
+    if (arrivedViaProductLink && !isLoadingDrilldown && !hasAutoScrolledRef.current) {
+      hasAutoScrolledRef.current = true;
+      // Tunggu 2 frame biar tabel yang baru selesai dimuat benar-benar
+      // kerender dulu, baru discroll -- supaya tidak nyasar ke posisi yang
+      // masih berubah-ubah.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.getElementById("drilldown-view")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
+    }
+  }, [arrivedViaProductLink, isLoadingDrilldown]);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "-";

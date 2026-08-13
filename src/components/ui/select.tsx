@@ -63,7 +63,13 @@ function SelectContent({
   sideOffset = 4,
   align = "center",
   alignOffset = 0,
-  alignItemWithTrigger = true,
+  // false SENGAJA (defaultnya base-ui true): mode "sejajarkan item terpilih
+  // pas ke posisi tombol" itu butuh dropdown menghitung ulang & geser
+  // posisinya sesaat setelah kebuka -- buat daftar pendek (misal cuma 2
+  // pilihan) pergeseran itu kelihatan jelas kaya kedutan. Diganti ke cara
+  // dropdown biasa: selalu buka di bawah/atas tombol, tanpa perlu
+  // menghitung ulang posisi.
+  alignItemWithTrigger = false,
   ...props
 }: SelectPrimitive.Popup.Props &
   Pick<

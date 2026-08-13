@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { createClient } from "@/lib/supabase/client";
-import { downloadCsv } from "@/lib/utils";
+import { downloadXlsx } from "@/lib/xlsx-export";
 import {
   Sheet,
   SheetContent,
@@ -143,7 +143,7 @@ export default function ReturnsPage() {
     });
   };
 
-  const handleExportCsv = () => {
+  const handleExportExcel = async () => {
     if (!returns || returns.length === 0) {
       toast.error("Tidak ada data untuk diekspor");
       return;
@@ -169,7 +169,7 @@ export default function ReturnsPage() {
     });
 
     const dateStr = new Date().toISOString().slice(0, 10);
-    downloadCsv(`retur_${dateStr}.csv`, headers, rows);
+    await downloadXlsx(`retur_${dateStr}.xlsx`, headers, rows);
   };
 
   return (
@@ -191,8 +191,8 @@ export default function ReturnsPage() {
               Inspeksi barang retur untuk menentukan apakah kembali ke stok (SELLABLE) atau dihapus (WRITE_OFF).
             </CardDescription>
           </div>
-          <Button onClick={handleExportCsv} variant="outline" size="sm" className="h-8">
-            <Download className="w-4 h-4 mr-2" /> Export CSV
+          <Button onClick={handleExportExcel} variant="outline" size="sm" className="h-8">
+            <Download className="w-4 h-4 mr-2" /> Export Excel
           </Button>
         </CardHeader>
         <CardContent>

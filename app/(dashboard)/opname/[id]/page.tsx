@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Loader2, ScanBarcode, Lock, ArrowLeft, Send, Download } from "lucide-react";
 import { toast } from "sonner";
-import { downloadCsv } from "@/lib/utils";
+import { downloadXlsx } from "@/lib/xlsx-export";
 
 const formSchema = z.object({
   batch_id: z.string().min(1, "Batch ID wajib diisi"),
@@ -123,14 +123,14 @@ export default function OpnameSessionDetail() {
 
 
 
-  const handleExportCsv = () => {
+  const handleExportExcel = async () => {
     if (!session?.items || session.items.length === 0) {
       toast.error("Tidak ada data untuk diekspor");
       return;
     }
 
     const headers = ["Batch Code", "SKU", "Nama Produk", "Qty Sistem", "Qty Fisik", "Selisih"];
-    
+
     const rows = session.items.map((item) => {
       const batchCode = item.product_batches?.batch_code || item.batch_id;
       const sku = item.product_batches?.products?.sku || "-";
@@ -143,7 +143,7 @@ export default function OpnameSessionDetail() {
     });
 
     const dateStr = new Date().toISOString().slice(0, 10);
-    downloadCsv(`opname_${sessionId}_${dateStr}.csv`, headers, rows);
+    await downloadXlsx(`opname_${sessionId}_${dateStr}.xlsx`, headers, rows);
   };
 
   if (isLoadingSession) {
@@ -345,8 +345,8 @@ export default function OpnameSessionDetail() {
               {isSessionOpen ? "Item yang sudah tercatat pada sesi ini." : "Hasil akhir stok opname untuk sesi ini."}
             </CardDescription>
           </div>
-          <Button onClick={handleExportCsv} variant="outline" size="sm" className="h-8">
-            <Download className="w-4 h-4 mr-2" /> Export CSV
+          <Button onClick={handleExportExcel} variant="outline" size="sm" className="h-8">
+            <Download className="w-4 h-4 mr-2" /> Export Excel
           </Button>
         </CardHeader>
         <CardContent>

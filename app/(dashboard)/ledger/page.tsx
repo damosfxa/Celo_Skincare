@@ -16,7 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSearchParams } from "next/navigation";
-import { scrollElementIntoView, downloadCsv } from "@/lib/utils";
+import { scrollElementIntoView } from "@/lib/utils";
+import { downloadXlsx } from "@/lib/xlsx-export";
 import { toast } from "sonner";
 import { Loader2, AlertTriangle, ArrowDownRight, ArrowUpRight, Edit, Download } from "lucide-react";
 
@@ -252,12 +253,12 @@ function LedgerPageContent({
       })
     : [];
 
-  const handleExportCsv = () => {
+  const handleExportExcel = async () => {
     if (!filteredRows || filteredRows.length === 0) {
       toast.error("Tidak ada data untuk diekspor");
       return;
     }
-    
+
     const headers = ["Waktu", "Batch ID", "Tipe Mutasi", "Channel", "Referensi", "Alasan", "Ref. Campaign", "Perubahan Qty", "Saldo Berjalan"];
 
     const rows = filteredRows.map(({ entry, idx }) => {
@@ -277,7 +278,7 @@ function LedgerPageContent({
     const selectedProduct = products.find(p => p.id === selectedProductId);
     const skuForFilename = selectedProduct?.sku?.replace(/[^a-zA-Z0-9-]/g, "_") || "produk";
     const dateStr = new Date().toISOString().slice(0, 10);
-    downloadCsv(`ledger_${skuForFilename}_${dateStr}.csv`, headers, rows);
+    await downloadXlsx(`ledger_${skuForFilename}_${dateStr}.xlsx`, headers, rows);
   };
 
   return (
@@ -333,8 +334,8 @@ function LedgerPageContent({
                 <div className="mb-6 space-y-4 p-4 border rounded-lg bg-muted/20">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-semibold">Filter Data Ledger</h3>
-                    <Button onClick={handleExportCsv} variant="outline" size="sm" className="h-8">
-                      <Download className="w-4 h-4 mr-2" /> Export CSV
+                    <Button onClick={handleExportExcel} variant="outline" size="sm" className="h-8">
+                      <Download className="w-4 h-4 mr-2" /> Export Excel
                     </Button>
                   </div>
                   

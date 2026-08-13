@@ -317,7 +317,6 @@ export default function ReturnsPage() {
               <div className="space-y-2">
                 <Label htmlFor="condition">Kondisi Barang</Label>
                 <Select
-                  modal={false}
                   disabled={isSubmitting}
                   value={form.watch("condition")}
                   onValueChange={(value) => form.setValue("condition", value as "SELLABLE" | "DAMAGED" | "LOST", { shouldValidate: true })}

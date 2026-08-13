@@ -133,7 +133,6 @@ export function BundleRecipeModal({ productId, isOpen, onClose }: BundleRecipeMo
                     <div className="flex-1 space-y-2">
                       <Label className="text-xs text-muted-foreground">Produk</Label>
                       <Select
-                        modal={false}
                         disabled={isSubmitting}
                         value={form.watch(`components.${index}.component_product_id`)}
                         onValueChange={(value) => form.setValue(`components.${index}.component_product_id`, value as string, { shouldValidate: true })}

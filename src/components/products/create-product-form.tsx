@@ -119,7 +119,6 @@ export function CreateProductForm() {
             <div className="space-y-2">
               <Label htmlFor="is_bundle">Tipe Produk</Label>
               <Select
-                modal={false}
                 disabled={isLoading}
                 value={form.watch("is_bundle")}
                 onValueChange={(value) => form.setValue("is_bundle", value as "false" | "true", { shouldValidate: true })}

@@ -51,10 +51,13 @@ export default function LedgerPage() {
 
   // Scroll halus ke tabel Riwayat Ledger begitu berpindah ke sana lewat link
   // (bukan lewat klik tab manual). Ini efek ke luar (posisi scroll browser),
-  // jadi memang tempatnya di useEffect, bukan setState.
+  // jadi memang tempatnya di useEffect, bukan setState. Dependency-nya
+  // sengaja teks (currentParamsString), sama seperti alasan di penyesuaian
+  // tab/produk di atas -- supaya konsisten terdeteksi tiap link diklik.
   useEffect(() => {
-    const tabFromUrl = searchParams.get("tab") === "anomalies" ? "anomalies" : "drilldown";
-    const productFromUrl = searchParams.get("product");
+    const params = new URLSearchParams(currentParamsString);
+    const tabFromUrl = params.get("tab") === "anomalies" ? "anomalies" : "drilldown";
+    const productFromUrl = params.get("product");
     if (tabFromUrl === "drilldown" && productFromUrl) {
       // Tunggu 2 frame biar panel drilldown yang baru aktif selesai kerender
       // dulu, baru discroll -- supaya tidak nyasar ke posisi panel yang masih
@@ -65,7 +68,7 @@ export default function LedgerPage() {
         });
       });
     }
-  }, [searchParams]);
+  }, [currentParamsString]);
 
   // States untuk Filter
   const [filterMovementType, setFilterMovementType] = useState<string>("all");

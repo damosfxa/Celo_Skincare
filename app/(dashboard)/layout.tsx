@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
-import Link from "next/link";
 import Image from "next/image";
-import { LogOut, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { NavLinks } from "@/components/layout/nav-links";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { LogoutButton } from "@/components/layout/logout-button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 
@@ -31,7 +31,15 @@ export default async function DashboardLayout({
 
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row">
+    // h-screen (bukan min-h-screen) SENGAJA: ini yang bikin area konten
+    // kanan (#main-scroll-area) beneran jadi kotak scroll sendiri yang
+    // terbatas persis 1 layar, bukan ikut memanjang mengikuti konten.
+    // Tanpa ini, min-h-0 di <main> di bawah jadi tidak berefek apa-apa
+    // (baris tinggi tanpa batas atas), makanya sidebar kiri gagal nempel
+    // pas discroll & tombol "kembali ke atas" tidak pernah muncul (dia
+    // memantau scroll di dalam kotak ini, yang kalau tidak dibatasi tidak
+    // akan pernah benar-benar discroll).
+    <div className="flex h-screen flex-col md:flex-row">
       {/* Mobile Topbar */}
       <div className="flex md:hidden h-16 items-center px-4 border-b bg-card justify-between sticky top-0 z-20">
         <div className="flex items-center gap-3">
@@ -75,9 +83,7 @@ export default async function DashboardLayout({
             <div className="p-4 border-t text-sm text-muted-foreground flex items-center gap-2 mt-auto">
               <div className="truncate flex-1">{user.email}</div>
               <ThemeToggle />
-              <Link href="/login" className="p-2 hover:bg-accent rounded-md text-destructive" title="Logout">
-                <LogOut className="h-4 w-4" />
-              </Link>
+              <LogoutButton />
             </div>
           </SheetContent>
         </Sheet>
@@ -106,9 +112,7 @@ export default async function DashboardLayout({
         <div className="p-4 border-t text-sm text-muted-foreground flex items-center gap-2">
           <div className="truncate flex-1">{user.email}</div>
           <ThemeToggle />
-          <Link href="/login" className="p-2 hover:bg-accent rounded-md text-destructive" title="Logout">
-            <LogOut className="h-4 w-4" />
-          </Link>
+          <LogoutButton />
         </div>
       </aside>
 

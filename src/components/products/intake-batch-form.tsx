@@ -96,6 +96,7 @@ export function IntakeBatchForm() {
             <div className="space-y-2">
               <Label htmlFor="product_id">Produk</Label>
               <Select
+                modal={false}
                 disabled={isLoading}
                 value={form.watch("product_id")}
                 onValueChange={(value) => form.setValue("product_id", value as string, { shouldValidate: true })}

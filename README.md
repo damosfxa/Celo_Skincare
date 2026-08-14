@@ -27,7 +27,7 @@ Sistem ini menjawabnya lewat satu prinsip inti: **tidak ada angka stok yang beru
 
 ## Demo
 
-- **Live URL:** https://stok-rekonsiliasi-skincare.vercel.app
+- **Live URL:** https://celo-skincare.vercel.app
 - **Kredensial testing:** dikirim terpisah lewat catatan private submission (bukan di repo publik ini, untuk mencegah akses tidak sah ke data demo).
 
 ## Tech Stack

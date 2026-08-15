@@ -112,6 +112,11 @@ export default function SimulationPage() {
     }
   };
 
+  // Sebuah baris (order) dianggap "sibuk" hanya kalau aksinya sendiri yang
+  // sedang diproses -- bukan flag global -- supaya order LAIN tetap bisa
+  // diproses tanpa harus menunggu 1 order selesai lebih dulu.
+  const isRowBusy = (orderId: string) => loadingAction?.startsWith(`${orderId}-`) ?? false;
+
   const handleAction = async (orderId: string, action: 'ship' | 'cancel' | 'return') => {
     setLoadingAction(`${orderId}-${action}`);
     try {
@@ -542,7 +547,7 @@ export default function SimulationPage() {
                               variant="outline" 
                               size="sm"
                               className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10"
-                              disabled={loadingAction !== null}
+                              disabled={isRowBusy(order.id)}
                               onClick={() => handleAction(order.id, 'ship')}
                             >
                               {loadingAction === `${order.id}-ship` ? <Loader2 className="h-4 w-4 animate-spin" /> : <PackageOpen className="mr-1 h-3 w-3" />}
@@ -552,7 +557,7 @@ export default function SimulationPage() {
                               variant="ghost" 
                               size="sm"
                               className="text-destructive hover:bg-destructive/10"
-                              disabled={loadingAction !== null}
+                              disabled={isRowBusy(order.id)}
                               onClick={() => handleAction(order.id, 'cancel')}
                             >
                               {loadingAction === `${order.id}-cancel` ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="mr-1 h-3 w-3" />}
@@ -565,7 +570,7 @@ export default function SimulationPage() {
                             <Button 
                               variant="secondary" 
                               size="sm"
-                              disabled={loadingAction !== null}
+                              disabled={isRowBusy(order.id)}
                               onClick={() => handleAction(order.id, 'return')}
                             >
                               {loadingAction === `${order.id}-return` ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="mr-1 h-3 w-3" />}
@@ -575,7 +580,7 @@ export default function SimulationPage() {
                               variant="ghost" 
                               size="sm"
                               className="text-destructive hover:bg-destructive/10"
-                              disabled={loadingAction !== null}
+                              disabled={isRowBusy(order.id)}
                               onClick={() => handleAction(order.id, 'cancel')}
                             >
                               {loadingAction === `${order.id}-cancel` ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="mr-1 h-3 w-3" />}
@@ -645,7 +650,21 @@ export default function SimulationPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!manualOutConfirmState} onOpenChange={(open) => !open && setManualOutConfirmState(null)}>
+      <Dialog
+        open={!!manualOutConfirmState}
+        onOpenChange={(open, eventDetails) => {
+          if (open) return;
+          // Cegah dialog ini ketutup (X/ESC/klik luar) selagi proses
+          // simpan masih jalan -- tanpa ini, dialog kelihatan "batal"
+          // padahal request permanen ke ledger tetap lanjut di belakang
+          // layar, dan operator bisa jadi tidak sadar stok sudah terpotong.
+          if (isManualOutLoading) {
+            eventDetails.cancel();
+            return;
+          }
+          setManualOutConfirmState(null);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Konfirmasi Mutasi Manual</DialogTitle>

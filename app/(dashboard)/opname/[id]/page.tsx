@@ -257,6 +257,18 @@ export default function OpnameSessionDetail() {
                       form.register("batch_id").ref(e);
                       batchInputRef.current = e;
                     }}
+                    onKeyDown={(e) => {
+                      // Alat scanner barcode fisik bekerja seperti mengetik
+                      // otomatis lalu menekan Enter -- tanpa ini, Enter akan
+                      // langsung men-submit form dengan Qty Fisik yang masih
+                      // 0 (belum sempat diisi). Pindahkan fokus ke Qty Fisik
+                      // dulu, sama seperti alur handleScan untuk kamera.
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        qtyInputRef.current?.focus();
+                        qtyInputRef.current?.select();
+                      }
+                    }}
                     className="font-mono text-lg h-[72px]"
                   />
                   <CameraScanner onScan={handleScan} />

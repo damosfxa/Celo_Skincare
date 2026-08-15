@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useReturns, inspectReturn, ReturnItem } from "@/hooks/useReturns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -58,6 +59,12 @@ export default function ReturnsPage() {
   const { returns, isLoading, isError, mutate } = useReturns();
   const [selectedReturn, setSelectedReturn] = useState<ReturnItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Antrean kerja (belum diinspeksi) dipisah dari riwayat yang sudah selesai
+  // -- tanpa ini, retur lama menumpuk di tabel yang sama dengan yang masih
+  // perlu ditindak, dan tabelnya makin berat seiring waktu.
+  const [returnsTab, setReturnsTab] = useState<"pending" | "history">("pending");
+  const pendingReturns = returns.filter((r) => r.condition === "PENDING_INSPECTION");
+  const historyReturns = returns.filter((r) => r.condition !== "PENDING_INSPECTION");
 
   const form = useForm<z.infer<typeof inspectSchema>>({
     resolver: zodResolver(inspectSchema),
@@ -184,6 +191,101 @@ export default function ReturnsPage() {
     await downloadXlsx(`retur_${dateStr}.xlsx`, headers, rows);
   };
 
+  // Dipakai bersama oleh tab "Menunggu Inspeksi" dan "Riwayat" -- 1 tabel,
+  // beda daftar & pesan kosongnya saja, supaya markup-nya tidak terduplikasi.
+  const renderReturnsTable = (items: ReturnItem[], emptyMessage: string) => {
+    if (items.length === 0) {
+      return (
+        <div className="text-center p-8 border border-dashed rounded-md text-muted-foreground flex flex-col items-center">
+          <Box className="h-10 w-10 text-muted-foreground mb-3 opacity-20" />
+          <p>{emptyMessage}</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="rounded-md border overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Order ID</TableHead>
+              <TableHead>Produk</TableHead>
+              <TableHead>Channel</TableHead>
+              <TableHead>Tanggal Diajukan</TableHead>
+              <TableHead>Batas Klaim</TableHead>
+              <TableHead>Kondisi</TableHead>
+              <TableHead className="text-right">Aksi</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {items.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell>
+                  <div className="font-mono text-xs">{item.order_id}</div>
+                  <div className="mt-1">
+                    <Badge
+                      variant="secondary"
+                      className={item.type === 'CANCELLATION' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-xs px-2 py-0.5' : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 text-xs px-2 py-0.5'}
+                    >
+                      {item.type === 'CANCELLATION' ? 'Pembatalan' : 'Retur'}
+                    </Badge>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="font-medium text-sm">{item.product_name || "-"}</div>
+                  <div className="text-xs text-muted-foreground">{item.product_sku || "-"}</div>
+                </TableCell>
+                <TableCell>{formatChannel(item.channel)}</TableCell>
+                <TableCell className="text-sm">{formatDate(item.created_at)}</TableCell>
+                <TableCell className="text-sm text-amber-600 font-medium">{formatDate(item.claim_deadline || "")}</TableCell>
+                <TableCell>
+                  <Badge
+                    variant="secondary"
+                    className={
+                      item.condition === 'PENDING_INSPECTION' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-500 text-xs' :
+                      item.condition === 'SELLABLE' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-500 text-xs' :
+                      'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500 text-xs'
+                    }
+                  >
+                    {item.condition === 'PENDING_INSPECTION' ? 'Menunggu Inspeksi' : item.condition}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  {item.condition === 'PENDING_INSPECTION' ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleOpenInspect(item)}
+                    >
+                      <Eye className="mr-1 h-3 w-3" />
+                      Inspeksi
+                    </Button>
+                  ) : (
+                    <div className="flex justify-end items-center gap-2">
+                      {item.photo_url && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setViewPhotoUrl(item.photo_url!)}
+                        >
+                          <ImageIcon className="mr-1 h-3 w-3" />
+                          Foto
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="sm" disabled>
+                        Selesai
+                      </Button>
+                    </div>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -218,96 +320,39 @@ export default function ReturnsPage() {
             <div className="text-destructive p-4 border rounded-md bg-destructive/10">
               Gagal memuat data retur.
             </div>
-          ) : returns.length === 0 ? (
-            <div className="text-center p-8 border border-dashed rounded-md text-muted-foreground flex flex-col items-center">
-              <Box className="h-10 w-10 text-muted-foreground mb-3 opacity-20" />
-              <p>Belum ada data pengajuan retur.</p>
-            </div>
           ) : (
-            <div className="rounded-md border overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>Produk</TableHead>
-                    <TableHead>Channel</TableHead>
-                    <TableHead>Tanggal Diajukan</TableHead>
-                    <TableHead>Batas Klaim</TableHead>
-                    <TableHead>Kondisi</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {returns.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>
-                        <div className="font-mono text-xs">{item.order_id}</div>
-                        <div className="mt-1">
-                          <Badge 
-                            variant="secondary" 
-                            className={item.type === 'CANCELLATION' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 text-xs px-2 py-0.5' : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 text-xs px-2 py-0.5'}
-                          >
-                            {item.type === 'CANCELLATION' ? 'Pembatalan' : 'Retur'}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="font-medium text-sm">{item.product_name || "-"}</div>
-                        <div className="text-xs text-muted-foreground">{item.product_sku || "-"}</div>
-                      </TableCell>
-                      <TableCell>{formatChannel(item.channel)}</TableCell>
-                      <TableCell className="text-sm">{formatDate(item.created_at)}</TableCell>
-                      <TableCell className="text-sm text-amber-600 font-medium">{formatDate(item.claim_deadline || "")}</TableCell>
-                      <TableCell>
-                        <Badge 
-                          variant="secondary"
-                          className={
-                            item.condition === 'PENDING_INSPECTION' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-500 text-xs' : 
-                            item.condition === 'SELLABLE' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-500 text-xs' : 
-                            'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500 text-xs'
-                          }
-                        >
-                          {item.condition === 'PENDING_INSPECTION' ? 'Menunggu Inspeksi' : item.condition}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {item.condition === 'PENDING_INSPECTION' ? (
-                          <Button 
-                            variant="secondary" 
-                            size="sm"
-                            onClick={() => handleOpenInspect(item)}
-                          >
-                            <Eye className="mr-1 h-3 w-3" />
-                            Inspeksi
-                          </Button>
-                        ) : (
-                          <div className="flex justify-end items-center gap-2">
-                            {item.photo_url && (
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={() => setViewPhotoUrl(item.photo_url!)}
-                              >
-                                <ImageIcon className="mr-1 h-3 w-3" />
-                                Foto
-                              </Button>
-                            )}
-                            <Button variant="ghost" size="sm" disabled>
-                              Selesai
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <Tabs value={returnsTab} onValueChange={(v) => setReturnsTab(v as "pending" | "history")}>
+              <TabsList className="mb-4">
+                <TabsTrigger value="pending">Menunggu Inspeksi ({pendingReturns.length})</TabsTrigger>
+                <TabsTrigger value="history">Riwayat</TabsTrigger>
+              </TabsList>
+              <TabsContent value="pending" className="mt-0">
+                {renderReturnsTable(pendingReturns, "Belum ada data pengajuan retur yang perlu diinspeksi.")}
+              </TabsContent>
+              <TabsContent value="history" className="mt-0">
+                {renderReturnsTable(historyReturns, "Belum ada riwayat retur.")}
+              </TabsContent>
+            </Tabs>
           )}
         </CardContent>
       </Card>
 
-      <Sheet open={!!selectedReturn} onOpenChange={(open) => !open && setSelectedReturn(null)}>
+      <Sheet
+        open={!!selectedReturn}
+        onOpenChange={(open, eventDetails) => {
+          if (open) return;
+          // Cegah sheet ini ketutup (X/ESC/klik luar) selagi foto masih
+          // diupload atau inspeksi masih disimpan -- tanpa ini, operator
+          // bisa buru-buru pindah ke retur lain sebelum proses selesai,
+          // dan hasilnya (foto/submit) bisa nyasar ke retur yang salah,
+          // atau memicu submit ganda untuk retur yang sama.
+          if (isSubmitting || isUploading) {
+            eventDetails.cancel();
+            return;
+          }
+          setSelectedReturn(null);
+        }}
+      >
         <SheetContent>
           <SheetHeader>
             <SheetTitle>Inspeksi Barang Retur</SheetTitle>

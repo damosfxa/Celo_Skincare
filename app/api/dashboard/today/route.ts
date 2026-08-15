@@ -115,7 +115,12 @@ export async function GET() {
       priority: claimPriority(claim.days_remaining),
       title: `Klaim TikTok ${claim.external_order_id}, ${claimDaysText}`,
       detail: `${claim.condition === "PENDING_INSPECTION" ? "Belum diinspeksi" : claim.condition}, ${claim.name} x${claim.qty}`,
-      href: "/returns",
+      // Halaman Retur sekarang punya 2 tab (Menunggu Inspeksi / Riwayat).
+      // Klaim TikTok bisa masih PENDING_INSPECTION (belum diinspeksi) ATAU
+      // sudah DAMAGED/LOST (sudah diinspeksi, tinggal ajukan klaim) --
+      // arahkan ke tab yang sesuai kondisinya, bukan cuma "/returns" polos,
+      // supaya tidak nyasar ke tab yang kosong.
+      href: claim.condition === "PENDING_INSPECTION" ? "/returns?tab=pending" : "/returns?tab=history",
     });
   }
 
@@ -130,7 +135,7 @@ export async function GET() {
       priority: expiryPriority(batch.days_remaining),
       title: `${batch.name}, batch ${batch.batch_code} ${expiryDaysText}`,
       detail: `Sisa ${batch.current_qty.toLocaleString("id-ID")} unit`,
-      href: "/products",
+      href: `/products/${batch.product_id}`,
     });
   }
 
@@ -158,7 +163,7 @@ export async function GET() {
       priority,
       title: `Retur ${productName} x${r.qty} menunggu inspeksi`,
       detail: `Order ${r.orders?.channel ?? "-"} #${externalOrderId}`,
-      href: "/returns",
+      href: "/returns?tab=pending",
     });
   }
 
@@ -169,7 +174,7 @@ export async function GET() {
       priority: "HIGH",
       title: `Resiko oversell: ${risk.name}`,
       detail: `${risk.reserved_qty.toLocaleString("id-ID")} unit dipesan, cuma ${risk.available_qty.toLocaleString("id-ID")} unit tersedia (kurang ${risk.shortfall.toLocaleString("id-ID")})`,
-      href: "/products",
+      href: `/products/${risk.product_id}`,
     });
   }
 

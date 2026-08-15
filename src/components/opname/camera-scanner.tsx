@@ -55,7 +55,13 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
       return;
     }
 
-    // Delay a bit to allow Dialog content to mount in DOM
+    // Delay singkat supaya animasi buka Dialog (durasi 100ms, lihat
+    // dialog.tsx) sempat kelar dulu sebelum kamera mulai -- div #reader
+    // sendiri sudah pasti ada di DOM begitu effect ini jalan (useEffect
+    // baru jalan setelah commit+paint), jadi delay ini murni soal
+    // membiarkan ukuran akhir modal stabil dulu, bukan menunggu DOM.
+    // Diturunkan dari 300ms -> 150ms (1.5x durasi animasi, masih ada
+    // margin aman) supaya kamera kerasa lebih responsif dibuka.
     const timer = setTimeout(() => {
       if (!scannerRef.current) {
         scannerRef.current = new Html5Qrcode("reader", { formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE], verbose: false });
@@ -128,7 +134,7 @@ export function CameraScanner({ onScan }: CameraScannerProps) {
         toast.error("Gagal mengakses kamera. Pastikan izin kamera diberikan.");
         console.error(err);
       });
-    }, 300);
+    }, 150);
 
     return () => clearTimeout(timer);
   }, [isOpen]); // dependency onScan dihapus karena pakai useRef

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -56,13 +57,20 @@ const inspectSchema = z.object({
 });
 
 export default function ReturnsPage() {
+  const searchParams = useSearchParams();
   const { returns, isLoading, isError, mutate } = useReturns();
   const [selectedReturn, setSelectedReturn] = useState<ReturnItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   // Antrean kerja (belum diinspeksi) dipisah dari riwayat yang sudah selesai
   // -- tanpa ini, retur lama menumpuk di tabel yang sama dengan yang masih
   // perlu ditindak, dan tabelnya makin berat seiring waktu.
-  const [returnsTab, setReturnsTab] = useState<"pending" | "history">("pending");
+  // Baca ?tab= dari URL (mis. link "Klaim TikTok" dari Dashboard) supaya
+  // bisa langsung membuka tab yang benar -- tanpa ini, link ke retur yang
+  // sudah diinspeksi (kondisi DAMAGED/LOST) akan nyasar ke tab "Menunggu
+  // Inspeksi" yang default, dan kelihatan kosong padahal datanya ada.
+  const [returnsTab, setReturnsTab] = useState<"pending" | "history">(
+    searchParams.get("tab") === "history" ? "history" : "pending"
+  );
   const pendingReturns = returns.filter((r) => r.condition === "PENDING_INSPECTION");
   const historyReturns = returns.filter((r) => r.condition !== "PENDING_INSPECTION");
 

@@ -84,6 +84,20 @@ export default function OpnameSessionDetail() {
     }
   }, [isSessionOpen]);
 
+  // Fokuskan balik ke Batch ID begitu proses submit BENAR-BENAR selesai
+  // (bukan tebak delay 100ms) -- kolom ini sempat disabled selama submit,
+  // dan memanggil .focus() ke elemen yang masih disabled tidak akan
+  // berhasil, jadi harus menunggu render berikutnya (disabled sudah lepas)
+  // baru fokus dipasang. Ini menutup celah "keystroke ilang" kalau operator
+  // scan lagi tepat di jeda antara disabled lepas dan fokus lama dipasang.
+  const wasSubmittingRef = useRef(false);
+  useEffect(() => {
+    if (wasSubmittingRef.current && !isSubmitting) {
+      batchInputRef.current?.focus();
+    }
+    wasSubmittingRef.current = isSubmitting;
+  }, [isSubmitting]);
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     // Validasi lokal sebelum kirim ke backend
     if (showDiscrepancyReason && !values.discrepancy_reason) {
@@ -93,7 +107,7 @@ export default function OpnameSessionDetail() {
 
     setIsSubmitting(true);
     try {
-      await submitOpnameItem(sessionId, values.batch_id, values.physical_qty, values.discrepancy_reason);
+      const updatedItem = await submitOpnameItem(sessionId, values.batch_id, values.physical_qty, values.discrepancy_reason);
       toast.success(`Batch ${values.batch_id} berhasil dicatat.`);
       form.reset({
         batch_id: "",
@@ -101,11 +115,31 @@ export default function OpnameSessionDetail() {
         discrepancy_reason: "",
       });
       setShowDiscrepancyReason(false);
-      mutate(); // Refresh the session data
-      // Refocus the input for the next scan
-      setTimeout(() => {
-        batchInputRef.current?.focus();
-      }, 100);
+      // Tempel hasil PATCH langsung ke cache lokal (tanpa refetch penuh
+      // seluruh checklist) -- cukup timpa field yang benar-benar berubah.
+      // JANGAN timpa seluruh baris: respons PATCH tidak membawa join
+      // product_batches/products, kalau baris ditimpa utuh nama produk &
+      // kode batch di baris ini akan hilang (balik nampilin UUID mentah).
+      mutate(
+        (current) => {
+          if (!current?.items) return current;
+          return {
+            ...current,
+            items: current.items.map((item) =>
+              item.batch_id === updatedItem.batch_id
+                ? {
+                    ...item,
+                    physical_qty: updatedItem.physical_qty,
+                    variance: updatedItem.variance,
+                    discrepancy_reason: updatedItem.discrepancy_reason,
+                    note: updatedItem.note,
+                  }
+                : item
+            ),
+          };
+        },
+        { revalidate: false }
+      );
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : String(error));
     } finally {
@@ -168,12 +202,18 @@ export default function OpnameSessionDetail() {
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            size="icon" 
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => router.push("/opname")}
             className="h-10 w-10 shrink-0"
             title="Kembali ke Daftar Sesi"
+            // Cegah operator pindah halaman di tengah proses Tutup Sesi --
+            // prosesnya tetap akan selesai di server walau ditinggal (jadi
+            // bukan soal data salah), tapi tanpa ini operator tidak dapat
+            // kepastian visual apakah penutupan sesi sudah benar-benar
+            // selesai atau belum.
+            disabled={isClosing}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -380,8 +420,8 @@ export default function OpnameSessionDetail() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {session.items.map((item, idx) => (
-                    <TableRow key={idx}>
+                  {session.items.map((item) => (
+                    <TableRow key={item.batch_id}>
                       <TableCell>
                         <div className="font-mono text-sm font-medium">
                           {item.product_batches?.batch_code || item.batch_id}

@@ -66,7 +66,7 @@ export default function ProductsPage() {
               Belum ada data produk. Silakan tambahkan produk baru.
             </div>
           ) : (
-            <div className="rounded-md border overflow-x-auto">
+            <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>

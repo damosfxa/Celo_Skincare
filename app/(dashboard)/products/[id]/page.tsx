@@ -299,7 +299,7 @@ export default function ProductDetailPage() {
                 Belum ada data batch untuk produk ini.
               </div>
             ) : (
-              <div className="rounded-md border overflow-x-auto">
+              <div className="rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>

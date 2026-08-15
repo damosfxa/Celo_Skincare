@@ -459,7 +459,7 @@ function LedgerPageContent({
                       Belum ada pergerakan stok atau tidak ada data yang cocok dengan filter.
                     </div>
                   ) : (
-                    <div className="rounded-md border overflow-x-auto">
+                    <div className="rounded-md border">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -591,7 +591,7 @@ function LedgerPageContent({
                   <p className="text-sm mt-1">Tidak ditemukan anomali atau selisih data stok harian.</p>
                 </div>
               ) : (
-                <div className="rounded-md border overflow-x-auto">
+                <div className="rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>

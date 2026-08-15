@@ -520,7 +520,7 @@ export default function SimulationPage() {
               <p>Belum ada order simulasi yang digenerate.</p>
             </div>
           ) : (
-            <div className="rounded-md border overflow-x-auto">
+            <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>

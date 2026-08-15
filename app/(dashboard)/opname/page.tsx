@@ -97,7 +97,7 @@ export default function OpnameSessionsPage() {
               <p>Belum ada sesi stok opname yang tercatat.</p>
             </div>
           ) : (
-            <div className="rounded-md border overflow-x-auto">
+            <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>

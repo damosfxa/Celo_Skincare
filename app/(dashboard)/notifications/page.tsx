@@ -92,7 +92,7 @@ export default function NotificationsPage() {
               <p className="text-sm mt-1">Semua stok awal sudah terverifikasi lewat opname fisik.</p>
             </div>
           ) : (
-            <div className="rounded-md border overflow-x-auto">
+            <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -154,7 +154,7 @@ export default function NotificationsPage() {
               <p className="text-sm mt-1">Tidak ada batch produk yang kedaluwarsa dalam 90 hari ke depan.</p>
             </div>
           ) : (
-            <div className="rounded-md border overflow-x-auto">
+            <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -217,7 +217,7 @@ export default function NotificationsPage() {
               <p className="text-sm mt-1">Tidak ada klaim TikTok yang perlu ditindaklanjuti saat ini.</p>
             </div>
           ) : (
-            <div className="rounded-md border overflow-x-auto">
+            <div className="rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>

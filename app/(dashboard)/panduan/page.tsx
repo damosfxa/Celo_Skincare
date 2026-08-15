@@ -177,7 +177,7 @@ export default function PanduanPage() {
                 Kalau ada baris di tab ini, artinya perlu ditelusuri lebih lanjut lewat Drilldown Produk.
               </li>
               <li>
-                Tombol <strong>Export CSV</strong>: unduh riwayat ledger produk yang sedang dilihat (sesuai filter yang aktif) ke file CSV. Berguna kalau datanya perlu diolah lebih lanjut di luar sistem. Kolom alasan dan referensi campaign ikut disertakan di filenya.
+                Tombol <strong>Export Excel</strong>: unduh riwayat ledger produk yang sedang dilihat (sesuai filter yang aktif) ke file Excel (.xlsx). Berguna kalau datanya perlu diolah lebih lanjut di luar sistem. Kolom alasan dan referensi campaign ikut disertakan sebagai kolom terpisah di filenya.
               </li>
             </ul>
           </CardContent>

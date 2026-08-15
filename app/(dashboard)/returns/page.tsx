@@ -134,6 +134,18 @@ export default function ReturnsPage() {
     }
   };
 
+  const CHANNEL_LABELS: Record<string, string> = {
+    shopee: "Shopee",
+    tiktok: "TikTok",
+    offline: "Offline",
+    internal: "Internal",
+  };
+
+  const formatChannel = (channel: string | null | undefined) => {
+    if (!channel) return "-";
+    return CHANNEL_LABELS[channel.toLowerCase()] || channel;
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return "-";
     return new Date(dateString).toLocaleString("id-ID", {
@@ -156,7 +168,7 @@ export default function ReturnsPage() {
       const type = item.type === 'CANCELLATION' ? 'Pembatalan' : 'Retur';
       const productName = item.product_name || "-";
       const sku = item.product_sku || "-";
-      const channel = item.channel || "-";
+      const channel = formatChannel(item.channel);
       const qty = item.qty !== undefined ? item.qty : 1;
       const condition = item.condition === 'PENDING_INSPECTION' ? 'Menunggu Inspeksi' : 
                         item.condition === 'SELLABLE' ? 'Layak Jual (Kembali ke Stok)' :
@@ -243,7 +255,7 @@ export default function ReturnsPage() {
                         <div className="font-medium text-sm">{item.product_name || "-"}</div>
                         <div className="text-xs text-muted-foreground">{item.product_sku || "-"}</div>
                       </TableCell>
-                      <TableCell className="capitalize">{item.channel}</TableCell>
+                      <TableCell>{formatChannel(item.channel)}</TableCell>
                       <TableCell className="text-sm">{formatDate(item.created_at)}</TableCell>
                       <TableCell className="text-sm text-amber-600 font-medium">{formatDate(item.claim_deadline || "")}</TableCell>
                       <TableCell>

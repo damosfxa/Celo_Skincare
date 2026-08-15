@@ -340,9 +340,11 @@ export default function OpnameSessionDetail() {
       <Card>
         <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-4">
           <div className="space-y-1.5">
-            <CardTitle>Riwayat Item Discan</CardTitle>
+            <CardTitle>{isSessionOpen ? "Checklist Batch Sesi Ini" : "Riwayat Item Discan"}</CardTitle>
             <CardDescription>
-              {isSessionOpen ? "Item yang sudah tercatat pada sesi ini." : "Hasil akhir stok opname untuk sesi ini."}
+              {isSessionOpen
+                ? "Semua batch yang masih berstok otomatis tercantum sejak sesi ini dibuka. Yang sudah di-scan akan terisi Qty Fisik-nya, sisanya tetap \"Belum dihitung\"."
+                : "Hasil akhir stok opname untuk sesi ini."}
             </CardDescription>
           </div>
           <Button onClick={handleExportExcel} variant="outline" size="sm" className="h-8">

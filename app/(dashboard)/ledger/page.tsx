@@ -452,13 +452,14 @@ function LedgerPageContent({
                       Belum ada pergerakan stok atau tidak ada data yang cocok dengan filter.
                     </div>
                   ) : (
-                    <div className="rounded-md border">
+                    <div className="rounded-md border overflow-x-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
                             <TableHead>Waktu</TableHead>
                             <TableHead>Batch ID</TableHead>
                             <TableHead>Tipe Mutasi</TableHead>
+                            <TableHead>Alasan</TableHead>
                             <TableHead>Referensi</TableHead>
                             <TableHead className="text-right">Perubahan Qty</TableHead>
                             <TableHead className="text-right">Saldo Berjalan</TableHead>
@@ -487,19 +488,23 @@ function LedgerPageContent({
                                   </div>
                                 )}
                               </TableCell>
+                              <TableCell className="text-sm">
+                                {entry.reason ? (
+                                  <div className="text-foreground font-medium capitalize">
+                                    {entry.reason.replace(/_/g, " ")}
+                                    {entry.campaign_reference && (
+                                      <span className="text-muted-foreground block text-[11px] font-normal mt-0.5 normal-case">Ref: {entry.campaign_reference}</span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground">-</span>
+                                )}
+                              </TableCell>
                               <TableCell className="text-muted-foreground text-sm">
                                 {entry.reference_type ? (
                                   <span className="capitalize">{entry.reference_type}: {entry.reference_id?.substring(0, 8)}...</span>
                                 ) : (
                                   "-"
-                                )}
-                                {entry.reason && (
-                                  <div className="mt-1 text-xs text-foreground font-medium capitalize">
-                                    {entry.reason.replace(/_/g, " ")}
-                                    {entry.campaign_reference && (
-                                      <span className="text-muted-foreground block text-[11px] font-normal mt-0.5">Ref: {entry.campaign_reference}</span>
-                                    )}
-                                  </div>
                                 )}
                               </TableCell>
                               <TableCell>

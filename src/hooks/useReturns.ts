@@ -26,8 +26,13 @@ export type ReturnItem = {
   qty?: number;
 };
 
-export function useReturns() {
-  const { data, error, isLoading, mutate } = useSWR<ReturnItem[]>('/api/returns', fetcher);
+// condition: undefined = ambil semua tanpa filter, null = jangan fetch dulu
+// (dipakai untuk tab Riwayat yang baru diambil begitu tabnya dibuka), string
+// = filter 1 kondisi atau beberapa dipisah koma (mis. "SELLABLE,DAMAGED,LOST").
+export function useReturns(condition?: string | null) {
+  const key =
+    condition === null ? null : condition ? `/api/returns?condition=${encodeURIComponent(condition)}` : '/api/returns';
+  const { data, error, isLoading, mutate } = useSWR<ReturnItem[]>(key, fetcher);
 
   return {
     returns: data || [],

@@ -37,7 +37,15 @@ export async function GET(request: Request) {
     )
     .order("created_at", { ascending: false });
 
-  if (condition) query = query.eq("condition", condition);
+  // Terima juga daftar kondisi dipisah koma (mis. "SELLABLE,DAMAGED,LOST")
+  // supaya tab Riwayat di client bisa minta semua kondisi selain
+  // PENDING_INSPECTION dalam 1 kali panggilan, tanpa perlu tarik semua baris
+  // lalu saring di client (itu sumber masalah "ambil semua data" yang mau
+  // diperbaiki).
+  if (condition) {
+    const conditions = condition.split(",").map((c) => c.trim()).filter(Boolean);
+    query = conditions.length > 1 ? query.in("condition", conditions) : query.eq("condition", conditions[0]);
+  }
 
   const { data, error } = await query;
   if (error) return handleError(error);

@@ -104,7 +104,6 @@ function compressImage(file: File): Promise<Blob> {
 
 export default function ReturnsPage() {
   const searchParams = useSearchParams();
-  const { returns, isLoading, isError, mutate } = useReturns();
   const [selectedReturn, setSelectedReturn] = useState<ReturnItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -118,8 +117,24 @@ export default function ReturnsPage() {
   const [returnsTab, setReturnsTab] = useState<"pending" | "history">(
     searchParams.get("tab") === "history" ? "history" : "pending"
   );
-  const pendingReturns = returns.filter((r) => r.condition === "PENDING_INSPECTION");
-  const historyReturns = returns.filter((r) => r.condition !== "PENDING_INSPECTION");
+  // Pending selalu diambil (ini kerjaan utama operator, tampil default).
+  // Riwayat baru diambil begitu tabnya benar-benar dibuka (key SWR jadi null
+  // selama tab pending aktif) -- supaya buka halaman Retur tidak otomatis
+  // menarik SELURUH riwayat retur sepanjang umur toko tiap kali.
+  const {
+    returns: pendingReturns,
+    isLoading: isLoadingPending,
+    isError: isErrorPending,
+    mutate: mutatePending,
+  } = useReturns("PENDING_INSPECTION");
+  const {
+    returns: historyReturns,
+    isLoading: isLoadingHistory,
+    isError: isErrorHistory,
+    mutate: mutateHistory,
+  } = useReturns(returnsTab === "history" ? "SELLABLE,DAMAGED,LOST" : null);
+  const isLoading = returnsTab === "history" ? isLoadingHistory : isLoadingPending;
+  const isError = returnsTab === "history" ? isErrorHistory : isErrorPending;
 
   const form = useForm<z.infer<typeof inspectSchema>>({
     resolver: zodResolver(inspectSchema),
@@ -203,7 +218,11 @@ export default function ReturnsPage() {
     try {
       await inspectReturn(selectedReturn.id, values.condition, values.photo_url || "", values.expiry_date);
       toast.success(`Retur untuk order ${selectedReturn.order_id} berhasil diinspeksi.`);
-      mutate();
+      // Item ini pindah dari daftar Pending ke Riwayat (kondisinya berubah) --
+      // refresh dua-duanya. Kalau tab Riwayat belum pernah dibuka (fetch-nya
+      // masih ditunda), mutateHistory() ini aman, tidak melakukan apa-apa.
+      mutatePending();
+      mutateHistory();
       setSelectedReturn(null);
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : String(error));
@@ -234,16 +253,28 @@ export default function ReturnsPage() {
   };
 
   const handleExportExcel = async () => {
-    if (!returns || returns.length === 0) {
-      toast.error("Tidak ada data untuk diekspor");
-      return;
-    }
-
     setIsExporting(true);
     try {
+      // Export tetap mencakup SEMUA retur (pending + riwayat digabung, sama
+      // seperti sebelumnya) -- makanya ambil langsung dari server di sini,
+      // bukan pakai pendingReturns/historyReturns yang sengaja tidak selalu
+      // memuat semuanya sekaligus di layar.
+      const res = await fetch("/api/returns");
+      if (!res.ok) {
+        throw new Error(`Gagal memuat data retur untuk export (kode ${res.status}). Coba lagi.`);
+      }
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error?.message || "Gagal memuat data retur untuk export");
+      const allReturns: ReturnItem[] = json.data || [];
+
+      if (allReturns.length === 0) {
+        toast.error("Tidak ada data untuk diekspor");
+        return;
+      }
+
       const headers = ["Order ID", "Tipe", "Produk", "SKU", "Channel", "Qty", "Kondisi", "Tanggal Diajukan", "Batas Klaim"];
 
-      const rows = returns.map((item) => {
+      const rows = allReturns.map((item) => {
         const orderId = item.order_id || "-";
         const type = item.type === 'CANCELLATION' ? 'Pembatalan' : 'Retur';
         const productName = item.product_name || "-";
@@ -262,6 +293,8 @@ export default function ReturnsPage() {
 
       const dateStr = new Date().toISOString().slice(0, 10);
       await downloadXlsx(`retur_${dateStr}.xlsx`, headers, rows);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setIsExporting(false);
     }

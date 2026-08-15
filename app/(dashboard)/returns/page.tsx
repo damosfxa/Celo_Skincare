@@ -56,11 +56,58 @@ const inspectSchema = z.object({
   path: ["expiry_date"],
 });
 
+const PHOTO_MAX_DIMENSION = 1280;
+const PHOTO_QUALITY = 0.8;
+
+// Kompres gambar lewat canvas sebelum upload -- murni fungsi utilitas,
+// tidak bergantung state komponen, jadi ditaruh di luar ReturnsPage.
+function compressImage(file: File): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      let { width, height } = img;
+      if (width > PHOTO_MAX_DIMENSION || height > PHOTO_MAX_DIMENSION) {
+        if (width > height) {
+          height = Math.round((height * PHOTO_MAX_DIMENSION) / width);
+          width = PHOTO_MAX_DIMENSION;
+        } else {
+          width = Math.round((width * PHOTO_MAX_DIMENSION) / height);
+          height = PHOTO_MAX_DIMENSION;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Canvas tidak didukung"));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error("Gagal mengompres gambar"))),
+        "image/jpeg",
+        PHOTO_QUALITY
+      );
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Format gambar tidak didukung untuk dikompres"));
+    };
+    img.src = objectUrl;
+  });
+}
+
 export default function ReturnsPage() {
   const searchParams = useSearchParams();
   const { returns, isLoading, isError, mutate } = useReturns();
   const [selectedReturn, setSelectedReturn] = useState<ReturnItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   // Antrean kerja (belum diinspeksi) dipisah dari riwayat yang sudah selesai
   // -- tanpa ini, retur lama menumpuk di tabel yang sama dengan yang masih
   // perlu ditindak, dan tabelnya makin berat seiring waktu.
@@ -93,19 +140,35 @@ export default function ReturnsPage() {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0 || !selectedReturn) return;
-    
+
     const file = e.target.files[0];
     setIsUploading(true);
-    
+
     try {
+      // Kompres dulu di device sebelum upload -- foto langsung dari kamera
+      // HP modern biasanya 3-10MB, dikompres ke maksimal 1280px/kualitas 80%
+      // JPEG supaya upload jauh lebih cepat di WiFi gudang yang pas-pasan,
+      // tanpa mengorbankan kejelasan sebagai bukti kondisi barang. Kalau
+      // kompresi gagal (format tidak didukung, dll), pakai file asli apa
+      // adanya -- jangan sampai fitur ini malah menggagalkan upload yang
+      // sebelumnya bekerja baik-baik saja.
+      let uploadBody: File | Blob = file;
+      let contentType: string | undefined;
+      try {
+        uploadBody = await compressImage(file);
+        contentType = "image/jpeg";
+      } catch {
+        uploadBody = file;
+      }
+
       // Membersihkan nama file dari karakter aneh
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
       const fileName = `${selectedReturn.id}/${Date.now()}-${cleanFileName}`;
-      
+
       const { data, error } = await supabase.storage
         .from('return-photos')
-        .upload(fileName, file);
-        
+        .upload(fileName, uploadBody, contentType ? { contentType } : undefined);
+
       if (error) throw error;
       
       const { data: urlData } = supabase.storage
@@ -176,27 +239,32 @@ export default function ReturnsPage() {
       return;
     }
 
-    const headers = ["Order ID", "Tipe", "Produk", "SKU", "Channel", "Qty", "Kondisi", "Tanggal Diajukan", "Batas Klaim"];
-    
-    const rows = returns.map((item) => {
-      const orderId = item.order_id || "-";
-      const type = item.type === 'CANCELLATION' ? 'Pembatalan' : 'Retur';
-      const productName = item.product_name || "-";
-      const sku = item.product_sku || "-";
-      const channel = formatChannel(item.channel);
-      const qty = item.qty !== undefined ? item.qty : 1;
-      const condition = item.condition === 'PENDING_INSPECTION' ? 'Menunggu Inspeksi' : 
-                        item.condition === 'SELLABLE' ? 'Layak Jual (Kembali ke Stok)' :
-                        item.condition === 'DAMAGED' ? 'Rusak (Write-off)' :
-                        item.condition === 'LOST' ? 'Hilang di Kurir' : (item.condition || "-");
-      const submittedDate = formatDate(item.created_at);
-      const deadline = formatDate(item.claim_deadline || "");
+    setIsExporting(true);
+    try {
+      const headers = ["Order ID", "Tipe", "Produk", "SKU", "Channel", "Qty", "Kondisi", "Tanggal Diajukan", "Batas Klaim"];
 
-      return [orderId, type, productName, sku, channel, qty, condition, submittedDate, deadline];
-    });
+      const rows = returns.map((item) => {
+        const orderId = item.order_id || "-";
+        const type = item.type === 'CANCELLATION' ? 'Pembatalan' : 'Retur';
+        const productName = item.product_name || "-";
+        const sku = item.product_sku || "-";
+        const channel = formatChannel(item.channel);
+        const qty = item.qty !== undefined ? item.qty : 1;
+        const condition = item.condition === 'PENDING_INSPECTION' ? 'Menunggu Inspeksi' :
+                          item.condition === 'SELLABLE' ? 'Layak Jual (Kembali ke Stok)' :
+                          item.condition === 'DAMAGED' ? 'Rusak (Write-off)' :
+                          item.condition === 'LOST' ? 'Hilang di Kurir' : (item.condition || "-");
+        const submittedDate = formatDate(item.created_at);
+        const deadline = formatDate(item.claim_deadline || "");
 
-    const dateStr = new Date().toISOString().slice(0, 10);
-    await downloadXlsx(`retur_${dateStr}.xlsx`, headers, rows);
+        return [orderId, type, productName, sku, channel, qty, condition, submittedDate, deadline];
+      });
+
+      const dateStr = new Date().toISOString().slice(0, 10);
+      await downloadXlsx(`retur_${dateStr}.xlsx`, headers, rows);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   // Dipakai bersama oleh tab "Menunggu Inspeksi" dan "Riwayat" -- 1 tabel,
@@ -313,8 +381,9 @@ export default function ReturnsPage() {
               Inspeksi barang retur untuk menentukan apakah kembali ke stok (SELLABLE) atau dihapus (WRITE_OFF).
             </CardDescription>
           </div>
-          <Button onClick={handleExportExcel} variant="outline" size="sm" className="h-8">
-            <Download className="w-4 h-4 mr-2" /> Export Excel
+          <Button onClick={handleExportExcel} disabled={isExporting} variant="outline" size="sm" className="h-8">
+            {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+            {isExporting ? "Mengekspor..." : "Export Excel"}
           </Button>
         </CardHeader>
         <CardContent>

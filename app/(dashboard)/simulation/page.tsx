@@ -82,6 +82,14 @@ export default function SimulationPage() {
         method: "POST",
         body: formData,
       });
+      // Cek res.ok DULU sebelum coba parse JSON -- kalau server/proxy
+      // menolak request (misal file kebesaran, timeout), balasannya bisa
+      // berupa halaman error HTML, bukan JSON. Coba parse itu sebagai JSON
+      // akan melempar error mentah yang membingungkan ("Unexpected token <
+      // in JSON"), bukan pesan yang jelas soal apa yang sebenarnya terjadi.
+      if (!res.ok) {
+        throw new Error(`Server menolak file (kode ${res.status}). Coba file yang lebih kecil atau cek koneksi, lalu coba lagi.`);
+      }
       const json = await res.json();
       if (!json.success) throw new Error(json.error || json.message || "Gagal mengimpor CSV");
       
@@ -598,7 +606,21 @@ export default function SimulationPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={!!returnItemDialogState?.isOpen} onOpenChange={(open) => !open && setReturnItemDialogState(null)}>
+      <Dialog
+        open={!!returnItemDialogState?.isOpen}
+        onOpenChange={(open, eventDetails) => {
+          if (open) return;
+          // Cegah dialog ini ketutup (X/ESC/klik luar) selagi retur masih
+          // diajukan -- konsisten dengan guard yang sama di dialog Manual
+          // Out, walau risikonya lebih rendah di sini (masih lewat inspeksi
+          // terpisah sebelum stok benar-benar berubah).
+          if (loadingAction !== null) {
+            eventDetails.cancel();
+            return;
+          }
+          setReturnItemDialogState(null);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Pilih Item untuk Diretur</DialogTitle>

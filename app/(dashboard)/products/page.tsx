@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useProducts } from "@/hooks/useProducts";
 import { CreateProductForm } from "@/components/products/create-product-form";
 import { IntakeBatchForm } from "@/components/products/intake-batch-form";
@@ -20,6 +21,11 @@ import { useRouter } from "next/navigation";
 export default function ProductsPage() {
   const { products, isLoading, isError } = useProducts();
   const router = useRouter();
+  // Baris yang sedang dituju, buat kasih tanda visual instan begitu diklik
+  // -- tanpa ini, di layar sentuh (yang tidak kena :hover) tidak ada tanda
+  // apa pun antara jari diangkat dan halaman detail muncul, operator gampang
+  // tap ulang mengira tap pertama tidak kena.
+  const [navigatingId, setNavigatingId] = useState<string | null>(null);
 
   return (
     <div className="space-y-6">
@@ -72,12 +78,22 @@ export default function ProductsPage() {
                 </TableHeader>
                 <TableBody>
                   {products.map((product) => (
-                    <TableRow 
+                    <TableRow
                       key={product.id}
-                      className="cursor-pointer hover:bg-muted/50"
-                      onClick={() => router.push(`/products/${product.id}`)}
+                      className="cursor-pointer hover:bg-muted/50 active:bg-muted transition-colors"
+                      style={navigatingId === product.id ? { opacity: 0.6 } : undefined}
+                      onMouseEnter={() => router.prefetch(`/products/${product.id}`)}
+                      onClick={() => {
+                        setNavigatingId(product.id);
+                        router.push(`/products/${product.id}`);
+                      }}
                     >
-                      <TableCell className="font-medium">{product.sku}</TableCell>
+                      <TableCell className="font-medium">
+                        <span className="inline-flex items-center gap-2">
+                          {product.sku}
+                          {navigatingId === product.id && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+                        </span>
+                      </TableCell>
                       <TableCell>{product.name}</TableCell>
                       <TableCell>
                         {product.is_bundle ? (

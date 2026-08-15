@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "next-themes";
+import { SWRProvider } from "@/components/providers/swr-provider";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -35,8 +36,10 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
-          {children}
-          <Toaster />
+          <SWRProvider>
+            {children}
+            <Toaster />
+          </SWRProvider>
         </ThemeProvider>
       </body>
     </html>

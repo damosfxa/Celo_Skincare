@@ -109,6 +109,7 @@ function LedgerPageContent({
   };
   const [correctionState, setCorrectionState] = useState<CorrectionState | null>(null);
   const [isCorrecting, setIsCorrecting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   const { products, isLoading: isLoadingProducts } = useProducts();
   const { data: drilldownData, isLoading: isLoadingDrilldown, mutate } = useReconciliationDrilldown(
@@ -259,26 +260,31 @@ function LedgerPageContent({
       return;
     }
 
-    const headers = ["Waktu", "Batch ID", "Tipe Mutasi", "Channel", "Referensi", "Alasan", "Ref. Campaign", "Perubahan Qty", "Saldo Berjalan"];
+    setIsExporting(true);
+    try {
+      const headers = ["Waktu", "Batch ID", "Tipe Mutasi", "Channel", "Referensi", "Alasan", "Ref. Campaign", "Perubahan Qty", "Saldo Berjalan"];
 
-    const rows = filteredRows.map(({ entry, idx }) => {
-      const waktu = formatDate(entry.created_at);
-      const batchId = entry.batch_code || entry.batch_id;
-      const type = entry.movement_type;
-      const channel = entry.channel || "-";
-      const reference = entry.reference_type ? `${entry.reference_type}: ${entry.reference_id}` : "-";
-      const reason = entry.reason || "-";
-      const campaign = entry.campaign_reference || "-";
-      const qty = entry.qty_delta;
-      const saldo = runningBalances[idx] !== undefined ? runningBalances[idx] : 0;
+      const rows = filteredRows.map(({ entry, idx }) => {
+        const waktu = formatDate(entry.created_at);
+        const batchId = entry.batch_code || entry.batch_id;
+        const type = entry.movement_type;
+        const channel = entry.channel || "-";
+        const reference = entry.reference_type ? `${entry.reference_type}: ${entry.reference_id}` : "-";
+        const reason = entry.reason || "-";
+        const campaign = entry.campaign_reference || "-";
+        const qty = entry.qty_delta;
+        const saldo = runningBalances[idx] !== undefined ? runningBalances[idx] : 0;
 
-      return [waktu, batchId, type, channel, reference, reason, campaign, qty, saldo];
-    });
+        return [waktu, batchId, type, channel, reference, reason, campaign, qty, saldo];
+      });
 
-    const selectedProduct = products.find(p => p.id === selectedProductId);
-    const skuForFilename = selectedProduct?.sku?.replace(/[^a-zA-Z0-9-]/g, "_") || "produk";
-    const dateStr = new Date().toISOString().slice(0, 10);
-    await downloadXlsx(`ledger_${skuForFilename}_${dateStr}.xlsx`, headers, rows);
+      const selectedProduct = products.find(p => p.id === selectedProductId);
+      const skuForFilename = selectedProduct?.sku?.replace(/[^a-zA-Z0-9-]/g, "_") || "produk";
+      const dateStr = new Date().toISOString().slice(0, 10);
+      await downloadXlsx(`ledger_${skuForFilename}_${dateStr}.xlsx`, headers, rows);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -334,8 +340,9 @@ function LedgerPageContent({
                 <div className="mb-6 space-y-4 p-4 border rounded-lg bg-muted/20">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-semibold">Filter Data Ledger</h3>
-                    <Button onClick={handleExportExcel} variant="outline" size="sm" className="h-8">
-                      <Download className="w-4 h-4 mr-2" /> Export Excel
+                    <Button onClick={handleExportExcel} disabled={isExporting} variant="outline" size="sm" className="h-8">
+                      {isExporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                      {isExporting ? "Mengekspor..." : "Export Excel"}
                     </Button>
                   </div>
                   
@@ -641,7 +648,22 @@ function LedgerPageContent({
         </TabsContent>
       </Tabs>
 
-      <Dialog open={!!correctionState} onOpenChange={(open) => !open && setCorrectionState(null)}>
+      <Dialog
+        open={!!correctionState}
+        onOpenChange={(open, eventDetails) => {
+          if (open) return;
+          // Cegah dialog ini ketutup (X/ESC/klik luar) selagi koreksi masih
+          // disimpan -- tanpa ini, operator bisa buru-buru buka koreksi
+          // untuk entri LAIN, dan begitu request lama selesai, state-nya
+          // ketimpa `setCorrectionState(null)` tanpa peringatan, menghapus
+          // isian form koreksi kedua yang sedang diisi.
+          if (isCorrecting) {
+            eventDetails.cancel();
+            return;
+          }
+          setCorrectionState(null);
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Koreksi Entri Ledger</DialogTitle>

@@ -58,6 +58,10 @@ const inspectSchema = z.object({
 
 const PHOTO_MAX_DIMENSION = 1280;
 const PHOTO_QUALITY = 0.8;
+// Berapa baris riwayat retur yang diambil per "halaman". Tab Riwayat mulai
+// dari sejumlah ini dan bisa dinaikkan lewat tombol "Muat lebih banyak" --
+// supaya buka tab tidak langsung menarik seluruh riwayat toko sekaligus.
+const HISTORY_PAGE_SIZE = 200;
 // Di bawah ukuran ini, biaya kompres (kualitas turun + CPU di HP kelas
 // bawah) tidak sebanding dengan hematnya -- foto dikirim apa adanya.
 const PHOTO_COMPRESS_MIN_BYTES = 512 * 1024;
@@ -130,10 +134,14 @@ export default function ReturnsPage() {
   const [returnsTab, setReturnsTab] = useState<"pending" | "history">(
     searchParams.get("tab") === "history" ? "history" : "pending"
   );
-  // Pending selalu diambil (ini kerjaan utama operator, tampil default).
+  // Berapa banyak riwayat yang diminta ke server saat ini. Naik per klik
+  // "Muat lebih banyak" -- key SWR berubah, data lebih banyak diambil.
+  const [historyLimit, setHistoryLimit] = useState(HISTORY_PAGE_SIZE);
+  // Pending selalu diambil (ini kerjaan utama operator, tampil default) dan
+  // TANPA limit -- operator harus lihat semua antrean yang belum diinspeksi.
   // Riwayat baru diambil begitu tabnya benar-benar dibuka (key SWR jadi null
-  // selama tab pending aktif) -- supaya buka halaman Retur tidak otomatis
-  // menarik SELURUH riwayat retur sepanjang umur toko tiap kali.
+  // selama tab pending aktif), dan dibatasi `historyLimit` supaya buka tab
+  // tidak menarik SELURUH riwayat retur sepanjang umur toko sekaligus.
   const {
     returns: pendingReturns,
     isLoading: isLoadingPending,
@@ -145,7 +153,7 @@ export default function ReturnsPage() {
     isLoading: isLoadingHistory,
     isError: isErrorHistory,
     mutate: mutateHistory,
-  } = useReturns(returnsTab === "history" ? "SELLABLE,DAMAGED,LOST" : null);
+  } = useReturns(returnsTab === "history" ? "SELLABLE,DAMAGED,LOST" : null, historyLimit);
 
   const form = useForm<z.infer<typeof inspectSchema>>({
     resolver: zodResolver(inspectSchema),
@@ -478,6 +486,21 @@ export default function ReturnsPage() {
             </TabsContent>
             <TabsContent value="history" className="mt-0">
               {renderReturnsTabBody(isLoadingHistory, isErrorHistory, historyReturns, "Belum ada riwayat retur.")}
+              {/* Tampilkan "Muat lebih banyak" kalau jumlah yang kembali persis
+                  sebanyak limit -- pertanda kemungkinan masih ada riwayat lebih
+                  lama yang belum ikut ditarik. Untuk data lengkap sekaligus,
+                  operator bisa pakai Export Excel (yang memang ambil semua). */}
+              {!isLoadingHistory && !isErrorHistory && historyReturns.length >= historyLimit && (
+                <div className="mt-4 flex justify-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setHistoryLimit((n) => n + HISTORY_PAGE_SIZE)}
+                  >
+                    Muat lebih banyak
+                  </Button>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>

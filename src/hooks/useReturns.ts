@@ -29,10 +29,24 @@ export type ReturnItem = {
 // condition: undefined = ambil semua tanpa filter, null = jangan fetch dulu
 // (dipakai untuk tab Riwayat yang baru diambil begitu tabnya dibuka), string
 // = filter 1 kondisi atau beberapa dipisah koma (mis. "SELLABLE,DAMAGED,LOST").
-export function useReturns(condition?: string | null) {
-  const key =
-    condition === null ? null : condition ? `/api/returns?condition=${encodeURIComponent(condition)}` : '/api/returns';
-  const { data, error, isLoading, mutate } = useSWR<ReturnItem[]>(key, fetcher);
+// limit: batasi jumlah baris (dipakai tab Riwayat supaya tidak menarik seluruh
+// riwayat sekaligus). Tanpa limit = ambil semua (dipakai Export Excel).
+export function useReturns(condition?: string | null, limit?: number) {
+  let key: string | null;
+  if (condition === null) {
+    key = null;
+  } else {
+    const parts: string[] = [];
+    if (condition) parts.push(`condition=${encodeURIComponent(condition)}`);
+    if (limit && limit > 0) parts.push(`limit=${limit}`);
+    key = parts.length ? `/api/returns?${parts.join("&")}` : '/api/returns';
+  }
+  // keepPreviousData: pas limit dinaikkan ("Muat lebih banyak"), baris yang
+  // sudah tampil tetap kelihatan selama data yang lebih banyak dimuat -- tanpa
+  // ini tabel sekejap kosong lalu balik skeleton, terasa seperti reload penuh.
+  const { data, error, isLoading, mutate } = useSWR<ReturnItem[]>(key, fetcher, {
+    keepPreviousData: true,
+  });
 
   return {
     returns: data || [],

@@ -28,6 +28,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const condition = searchParams.get("condition");
   const channel = searchParams.get("channel");
+  const limitParam = searchParams.get("limit");
 
   const supabase = await createClient();
   let query = supabase
@@ -52,6 +53,16 @@ export async function GET(request: Request) {
     } else if (conditions.length === 1) {
       query = query.eq("condition", conditions[0]);
     }
+  }
+
+  // Batasi jumlah baris HANYA kalau ?limit= dikirim eksplisit oleh pemanggil.
+  // Tanpa param ini, perilaku lama tetap: ambil semua baris (dipakai Export
+  // Excel yang memang butuh data lengkap). Tab Riwayat mengirim limit supaya
+  // buka tab tidak menarik seluruh riwayat toko sekaligus -- makin lama toko
+  // jalan, payload-nya bisa membengkak (join order_items/products/orders).
+  const limit = limitParam ? parseInt(limitParam, 10) : null;
+  if (limit !== null && Number.isFinite(limit) && limit > 0) {
+    query = query.limit(limit);
   }
 
   const { data, error } = await query;

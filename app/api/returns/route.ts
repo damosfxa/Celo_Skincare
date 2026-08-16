@@ -44,7 +44,14 @@ export async function GET(request: Request) {
   // diperbaiki).
   if (condition) {
     const conditions = condition.split(",").map((c) => c.trim()).filter(Boolean);
-    query = conditions.length > 1 ? query.in("condition", conditions) : query.eq("condition", conditions[0]);
+    // Kalau setelah dibersihkan tidak ada kondisi valid (mis. "," atau spasi
+    // saja), jangan pasang filter dengan nilai undefined -- biarkan tanpa
+    // filter kondisi, sama seperti kalau parameter condition tidak dikirim.
+    if (conditions.length > 1) {
+      query = query.in("condition", conditions);
+    } else if (conditions.length === 1) {
+      query = query.eq("condition", conditions[0]);
+    }
   }
 
   const { data, error } = await query;

@@ -475,7 +475,12 @@ function LedgerPageContent({
                         </TableHeader>
                         <TableBody>
                           {filteredRows.map(({ entry, idx }) => (
-                            <TableRow key={idx}>
+                            // key pakai entry.id (stabil) -- bukan idx: dengan
+                            // idx, saat filter berubah React memakai ulang baris
+                            // di posisi yang sama untuk entri berbeda, sehingga
+                            // state per-baris (modal QR, tombol Koreksi yang
+                            // menangkap `entry`) bisa nyangkut ke entri salah.
+                            <TableRow key={entry.id}>
                               <TableCell className="whitespace-nowrap text-muted-foreground text-sm">
                                 {formatDate(entry.created_at)}
                               </TableCell>

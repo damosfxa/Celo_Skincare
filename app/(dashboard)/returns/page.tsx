@@ -58,48 +58,61 @@ const inspectSchema = z.object({
 
 const PHOTO_MAX_DIMENSION = 1280;
 const PHOTO_QUALITY = 0.8;
+// Di bawah ukuran ini, biaya kompres (kualitas turun + CPU di HP kelas
+// bawah) tidak sebanding dengan hematnya -- foto dikirim apa adanya.
+const PHOTO_COMPRESS_MIN_BYTES = 512 * 1024;
 
-// Kompres gambar lewat canvas sebelum upload -- murni fungsi utilitas,
-// tidak bergantung state komponen, jadi ditaruh di luar ReturnsPage.
-function compressImage(file: File): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const objectUrl = URL.createObjectURL(file);
+// Kompres gambar sebelum upload -- murni fungsi utilitas, tidak bergantung
+// state komponen, jadi ditaruh di luar ReturnsPage. Mengembalikan Blob hasil
+// kompres (image/jpeg) ATAU file asli apa adanya kalau tidak perlu/tidak bisa
+// dikompres. Pemanggil menentukan contentType dari .type Blob yang
+// dikembalikan, jadi file asli tetap terkirim dengan tipe aslinya.
+async function compressImage(file: File): Promise<Blob> {
+  // Cuma kompres foto besar. File kecil dikirim apa adanya supaya foto yang
+  // sudah kecil tidak di-re-encode sia-sia (malah menurunkan kualitas + boros
+  // CPU). PNG juga dilewati: memaksanya ke JPEG membuat area transparan jadi
+  // latar hitam.
+  if (file.size <= PHOTO_COMPRESS_MIN_BYTES || file.type === "image/png") {
+    return file;
+  }
 
-    img.onload = () => {
-      URL.revokeObjectURL(objectUrl);
-      let { width, height } = img;
-      if (width > PHOTO_MAX_DIMENSION || height > PHOTO_MAX_DIMENSION) {
-        if (width > height) {
-          height = Math.round((height * PHOTO_MAX_DIMENSION) / width);
-          width = PHOTO_MAX_DIMENSION;
-        } else {
-          width = Math.round((width * PHOTO_MAX_DIMENSION) / height);
-          height = PHOTO_MAX_DIMENSION;
-        }
+  // createImageBitmap dengan imageOrientation "from-image" menerapkan orientasi
+  // EXIF -- tanpa ini, foto potret dari kamera HP bisa tersimpan miring 90
+  // derajat di sebagian browser/webview, padahal foto ini bukti wajib kondisi
+  // barang. Kalau gagal (browser lawas / format tak didukung), pakai file asli.
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  } catch {
+    return file;
+  }
+
+  try {
+    let { width, height } = bitmap;
+    if (width > PHOTO_MAX_DIMENSION || height > PHOTO_MAX_DIMENSION) {
+      if (width > height) {
+        height = Math.round((height * PHOTO_MAX_DIMENSION) / width);
+        width = PHOTO_MAX_DIMENSION;
+      } else {
+        width = Math.round((width * PHOTO_MAX_DIMENSION) / height);
+        height = PHOTO_MAX_DIMENSION;
       }
+    }
 
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        reject(new Error("Canvas tidak didukung"));
-        return;
-      }
-      ctx.drawImage(img, 0, 0, width, height);
-      canvas.toBlob(
-        (blob) => (blob ? resolve(blob) : reject(new Error("Gagal mengompres gambar"))),
-        "image/jpeg",
-        PHOTO_QUALITY
-      );
-    };
-    img.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new Error("Format gambar tidak didukung untuk dikompres"));
-    };
-    img.src = objectUrl;
-  });
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, width, height);
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", PHOTO_QUALITY)
+    );
+    return blob ?? file;
+  } finally {
+    bitmap.close();
+  }
 }
 
 export default function ReturnsPage() {
@@ -133,8 +146,6 @@ export default function ReturnsPage() {
     isError: isErrorHistory,
     mutate: mutateHistory,
   } = useReturns(returnsTab === "history" ? "SELLABLE,DAMAGED,LOST" : null);
-  const isLoading = returnsTab === "history" ? isLoadingHistory : isLoadingPending;
-  const isError = returnsTab === "history" ? isErrorHistory : isErrorPending;
 
   const form = useForm<z.infer<typeof inspectSchema>>({
     resolver: zodResolver(inspectSchema),
@@ -164,17 +175,19 @@ export default function ReturnsPage() {
       // HP modern biasanya 3-10MB, dikompres ke maksimal 1280px/kualitas 80%
       // JPEG supaya upload jauh lebih cepat di WiFi gudang yang pas-pasan,
       // tanpa mengorbankan kejelasan sebagai bukti kondisi barang. Kalau
-      // kompresi gagal (format tidak didukung, dll), pakai file asli apa
-      // adanya -- jangan sampai fitur ini malah menggagalkan upload yang
+      // kompresi gagal / tidak perlu, compressImage mengembalikan file asli
+      // apa adanya -- jangan sampai fitur ini malah menggagalkan upload yang
       // sebelumnya bekerja baik-baik saja.
       let uploadBody: File | Blob = file;
-      let contentType: string | undefined;
       try {
         uploadBody = await compressImage(file);
-        contentType = "image/jpeg";
       } catch {
         uploadBody = file;
       }
+      // Ambil contentType dari Blob yang benar-benar dikembalikan (image/jpeg
+      // kalau dikompres, atau tipe asli kalau file dikirim apa adanya) -- jangan
+      // asumsikan selalu jpeg, karena file asli bisa saja PNG.
+      const contentType = uploadBody.type || file.type || undefined;
 
       // Membersihkan nama file dari karakter aneh
       const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
@@ -240,7 +253,9 @@ export default function ReturnsPage() {
 
   const formatChannel = (channel: string | null | undefined) => {
     if (!channel) return "-";
-    return CHANNEL_LABELS[channel.toLowerCase()] || channel;
+    // Channel tak dikenal tetap dikapitalkan (mis. "lazada" -> "Lazada") supaya
+    // konsisten dengan yang dikenal, baik di tabel maupun hasil export Excel.
+    return CHANNEL_LABELS[channel.toLowerCase()] || channel.charAt(0).toUpperCase() + channel.slice(1);
   };
 
   const formatDate = (dateString: string) => {
@@ -298,6 +313,36 @@ export default function ReturnsPage() {
     } finally {
       setIsExporting(false);
     }
+  };
+
+  // Isi 1 tab: skeleton/error/tabel sesuai state tab ITU SENDIRI. Loading
+  // dipasang di dalam tab, bukan membungkus seluruh <Tabs> -- kalau membungkus,
+  // klik pertama ke tab Riwayat bikin baris tab (TabsList) ikut hilang selama
+  // riwayat dimuat, dan operator tidak bisa balik ke tab Menunggu Inspeksi
+  // sampai fetch selesai (terasa nyangkut di koneksi gudang yang lambat).
+  const renderReturnsTabBody = (
+    isLoadingTab: boolean,
+    isErrorTab: boolean,
+    items: ReturnItem[],
+    emptyMessage: string
+  ) => {
+    if (isLoadingTab) {
+      return (
+        <div className="space-y-4">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-12 w-full" />
+          ))}
+        </div>
+      );
+    }
+    if (isErrorTab) {
+      return (
+        <div className="text-destructive p-4 border rounded-md bg-destructive/10">
+          Gagal memuat data retur.
+        </div>
+      );
+    }
+    return renderReturnsTable(items, emptyMessage);
   };
 
   // Dipakai bersama oleh tab "Menunggu Inspeksi" dan "Riwayat" -- 1 tabel,
@@ -420,30 +465,21 @@ export default function ReturnsPage() {
           </Button>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
-          ) : isError ? (
-            <div className="text-destructive p-4 border rounded-md bg-destructive/10">
-              Gagal memuat data retur.
-            </div>
-          ) : (
-            <Tabs value={returnsTab} onValueChange={(v) => setReturnsTab(v as "pending" | "history")}>
-              <TabsList className="mb-4">
-                <TabsTrigger value="pending">Menunggu Inspeksi ({pendingReturns.length})</TabsTrigger>
-                <TabsTrigger value="history">Riwayat</TabsTrigger>
-              </TabsList>
-              <TabsContent value="pending" className="mt-0">
-                {renderReturnsTable(pendingReturns, "Belum ada data pengajuan retur yang perlu diinspeksi.")}
-              </TabsContent>
-              <TabsContent value="history" className="mt-0">
-                {renderReturnsTable(historyReturns, "Belum ada riwayat retur.")}
-              </TabsContent>
-            </Tabs>
-          )}
+          {/* <Tabs> SELALU ter-mount -- loading/error dirender per-tab di dalam
+              TabsContent, bukan membungkus seluruh blok, supaya baris tab tidak
+              ikut hilang saat salah satu tab sedang dimuat. */}
+          <Tabs value={returnsTab} onValueChange={(v) => setReturnsTab(v as "pending" | "history")}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="pending">Menunggu Inspeksi ({pendingReturns.length})</TabsTrigger>
+              <TabsTrigger value="history">Riwayat</TabsTrigger>
+            </TabsList>
+            <TabsContent value="pending" className="mt-0">
+              {renderReturnsTabBody(isLoadingPending, isErrorPending, pendingReturns, "Belum ada data pengajuan retur yang perlu diinspeksi.")}
+            </TabsContent>
+            <TabsContent value="history" className="mt-0">
+              {renderReturnsTabBody(isLoadingHistory, isErrorHistory, historyReturns, "Belum ada riwayat retur.")}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
 
